@@ -2,7 +2,7 @@ import os
 
 # Global Variables #
 files = {} # dictionary of all files in file system. --KEY=absolute path, --VALUE=File object
-f = "" # 
+f = ""
 
 # Methods to call using the python terminal #
 # Many of these methods are just wrapper calls to the underlying pyfile objects #
@@ -32,19 +32,19 @@ def mkdir(dirname):
     print "[INFO] A new directory with location ~%s, has been created" % dirname
     return directory
 
-def open(filename, mode):
-    # Handle exceptions for file system suspension and whether file exists or not #
-    # TODO #
-    return 0
+#def open(filename, mode):
+#    # Handle exceptions for file system suspension and whether file exists or not #
+#    # TODO #
+#    return 0
 
-def close(fd):
-    # Takes file descriptor, locates file, and calls close method on file object directly #
-    # TODO #
-    return 0
+#def close(fd):
+#    # Takes file descriptor, locates file, and calls close method on file object directly #
+#    # TODO #
+#    return 0
 
-def length(fd):
-    # Call length method on file object itself #
-    return 0
+#def length(fd):
+#    # Call length method on file object itself #
+#    return 0
 
 def pos(fd):
     file = files[fd]
@@ -52,24 +52,25 @@ def pos(fd):
         return file.position
     return -1
 
-def seek(fd, pos):
-    # Call seek method on file object itself #
-    return 0
+#def seek(fd, pos):
+#    # Call seek method on file object itself #
+#    return 0
 
 def read(fd, nbytes):
-    # Call read method on file object itself #
-    # Handle exceptions for going beyond file size #
-    return 0
+    if fd in files:
+        files[fs].read()
+    else:
+        print 'File not in Directory. Use error handling later?'
 
 def write(fd, writebuf):
-    if fs in files:
-        file[fs].open()
+    if fd in files:
+        files[fd].open()
     else:
         print "Not in directory. Error handling will go here"
 
-def readlines(fd):
-    # Call readlines method on file object itself #
-    return 0
+#def readlines(fd):
+#    # Call readlines method on file object itself #
+#    return 0
 
 def delfile(filename):
     if filename in files: # TODO will also need to check that it is not a directory
@@ -77,26 +78,26 @@ def delfile(filename):
         return True
     return False
 
-def deldir(dirname):
-    # Remove file from dictionary (if it exists), update all keys in dictionary with this directory above them, call delete method on file object itself #
-    return 0
-
-def isdir(filename):
-    # Call isdir() on file object itself #
-    return 0
-
-def listdir(filename):
-    # List all directories from the dictionary data structure #
-    return 0
-
-def suspend():
-    # TODO supspend filesystem operations (set a variable) #
-    # All file objects in data structure will be serialized and saved to a save file #
-    return 0
-
-def resume():
-    # TODO resume filesystem operations (set a variable) #
-    return 0
+#def deldir(dirname):
+#    # Remove file from dictionary (if it exists), update all keys in dictionary with this directory above them, call delete method on file object itself #
+#    return 0
+#
+#def isdir(filename):
+#    # Call isdir() on file object itself #
+#    return 0
+#
+#def listdir(filename):
+#    # List all directories from the dictionary data structure #
+#    return 0
+#
+#def suspend():
+#    # TODO supspend filesystem operations (set a variable) #
+#    # All file objects in data structure will be serialized and saved to a save file #
+#    return 0
+#
+#def resume():
+#    # TODO resume filesystem operations (set a variable) #
+#    return 0
 
 # python file class used to store information about each file object #
 class pyfile:
@@ -112,9 +113,8 @@ class pyfile:
         self.maxsize = maxsize
         self.isdir = isdir
         # parse out name based on end of path #
-    
+
     def open(self, read):
-      # TODO #
       self.isopen = True
       # read handles the 'r' and 'w' cases for read and write and sets variables internally #
 
@@ -130,28 +130,36 @@ class pyfile:
         self.position = position
         # TODO #
 
-    def read(self, bytes):
-        # TODO read amount of bytes from current position and return #
-        return 0
+    #def read(self, bytes):
+    #    # TODO read amount of bytes from current position and return #
+    #    return 0
 
     def write(self, writeBuf):
         # Check if file is open
         if isopen:
-            contents.append(writeBuf)
+            # Check if there are any new lines in the write buf
+            if '\n' in writeBuf:
+                splitStr = writeBuf.split('\n')
+                for line in splitStr:
+                    size += len(line) + 1
+                    contents.append(line + '\n')
+            else: # No new line chracter
+                size += len(writeBuf)
+                contents.append(writeBuf)
         else:
             print "Error : File is closed"
 
-    def readLines(self, bytes):
-        # Read all lines in file and return as list of strings (DOES NOT CHANGE POSITION) #
-        return 0
+    #def readLines(self, bytes):
+    #    # Read all lines in file and return as list of strings (DOES NOT CHANGE POSITION) #
+    #    return 0
 
-    def delete(self):
-        # delete file (based on directory boolean, it will handle how it deletes the file internally) #
-        return 0
+    #def delete(self):
+    ## delete file (based on directory boolean, it will handle how it deletes the file internally) #
+    #    return 0
 
     def isdir(self):
         return self.isdir
 
-    def listdir(self):
-        # TODO list directorys #
-        return 0
+    #def listdir(self):
+    #    # TODO list directorys #
+    #    return 0
