@@ -23,6 +23,7 @@ def create(filename, nbytes):
     # Call File object create method #
     # TODO handle exceptions for space #
     files[filename] = pyfile(filename, nbytes, False)
+    print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
 
 def mkdir(dirname):
     directory = pyfile(dirname, 0, True) # initialize a new pyfile object with isdir set to true
@@ -72,7 +73,7 @@ def read(fd, nbytes):
 
 def write(fd, writebuf):
     if fd in files:
-        files[fd].open()
+        files[fd].write(writebuf)
     else:
         print "Not in directory. Error handling will go here"
 
@@ -124,13 +125,15 @@ class pyfile:
         # parse out name based on end of path #
 
     def open(self, mode):
-      self.isopen = True
-      if mode == 'r':
-          mode = 'r'
-      elif mode == 'w':
-          mode = 'w'
-      else:
-          print 'Invalid file mode'
+        self.isopen = True
+        if mode == 'r':
+            self.mode = 'r'
+            print '[INFO] Opened file %s in mode \'%s\'' % (self.path, mode)
+        elif mode == 'w':
+            self.mode = 'w'
+            print '[INFO] Opened file %s in mode \'%s\'' % (self.path, mode)
+        else:
+            print 'Invalid file mode'
 
       # read handles the 'r' and 'w' cases for read and write and sets variables internally #
 
@@ -150,16 +153,18 @@ class pyfile:
 
     def write(self, writeBuf):
         # Check if file is open
-        if isopen and mode == 'r':
+        if self.isopen and self.mode == 'w':
             # Check if there are any new lines in the write buf
             if '\n' in writeBuf:
+                print '[INFO] Printing things with new lines'
                 splitStr = writeBuf.split('\n')
                 for line in splitStr:
-                    size += len(line) + 1
-                    contents.append(line + '\n')
+                    self.size += len(line) + 1
+                    self.contents.append(line + '\n')
             else: # No new line chracter
-                size += len(writeBuf)
-                contents.append(writeBuf)
+                print '[INFO] Writing %s to file %s' % (writeBuf, self.path)
+                self.size += len(writeBuf)
+                self.contents.append(writeBuf)
         else:
             print "Error : File is closed or not allowed to write to"
 
