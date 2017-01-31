@@ -1,26 +1,29 @@
-class PyFile:
+class pyfile:
    'Base class for all files stored in the file system'
-   empCount = 0
-   isDir = false
-   isOpen = false
+   isdir = False
+   isopen = False
    position = 0
+   size = 0
 
-   def __init__(self, path, size, isDir):
+   def __init__(self, path, maxsize, isdir):
       self.path = path
-      self.size = size
-      self.isDir = isDir
+      self.maxsize = maxsize
+      self.isdir = isdir
       # parse out name based on end of path #
    
    def open(self, read):
      # TODO #
+     self.isopen = True
      # read handles the 'r' and 'w' cases for read and write and sets variables internally #
 
    def close(self):
       # TODO #
+      self.isopen = False
       # Check read/write variable to see if able to close #
 
    def length(self):
       # TODO #
+      return len(self)
 
    def seek(self, position):
       self.position = position
@@ -38,10 +41,10 @@ class PyFile:
    def delete(self):
       # delete file (based on directory boolean, it will handle how it deletes the file internally) #
 
-   def isDir(self):
-      return isDir
+   def isdir(self):
+      return self.isdir
 
-   def listDir(self):
+   def listdir(self):
       # TODO list directorys #
 
 class fs:
