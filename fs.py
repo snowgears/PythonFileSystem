@@ -24,7 +24,7 @@ def create(filename, nbytes):
     # TODO handle exceptions for space #
     # all bytes initialized to 0 #
     files[filename] = pyfile(filename, nbytes, False)
-    return 0
+    return files[filename]
 
 def mkdir(dirname):
     directory = pyfile(dirname, 0, True) # initialize a new pyfile object with isdir set to true
@@ -62,8 +62,8 @@ def read(fd, nbytes):
     return 0
 
 def write(fd, writebuf):
-    if fs in files:
-        file[fs].open()
+    if fd in files:
+        files[fd].open()
     else:
         print "Not in directory. Error handling will go here"
 
@@ -73,7 +73,7 @@ def readlines(fd):
 
 def delfile(filename):
     if filename in files: # TODO will also need to check that it is not a directory
-        del files[filename]
+        files[filename].delete()
         return True
     return False
 
@@ -85,9 +85,13 @@ def isdir(filename):
     # Call isdir() on file object itself #
     return 0
 
+# List all directories from the dictionary data structure #
 def listdir(filename):
-    # List all directories from the dictionary data structure #
-    return 0
+    #TODO in the future this will need to only list directories that are nested within the 'filename'
+    for key in files:
+        file = d[key]
+        if file.isdir:
+            print file.path
 
 def suspend():
     # TODO supspend filesystem operations (set a variable) #
@@ -114,8 +118,8 @@ class pyfile:
         # parse out name based on end of path #
     
     def open(self, read):
-      # TODO #
       self.isopen = True
+      # TODO #
       # read handles the 'r' and 'w' cases for read and write and sets variables internally #
 
     def close(self):
@@ -136,7 +140,7 @@ class pyfile:
 
     def write(self, writeBuf):
         # Check if file is open
-        if isopen:
+        if self.isopen:
             contents.append(writeBuf)
         else:
             print "Error : File is closed"
@@ -146,12 +150,13 @@ class pyfile:
         return 0
 
     def delete(self):
-        # delete file (based on directory boolean, it will handle how it deletes the file internally) #
-        return 0
+        if self.isdir:
+            for key in files:
+                file = d[key]
+                if file.isdir and file.path in self.path: # TODO this may need to be modified (maybe create an external comparison method)
+                    del files[file.path]
+        else
+            del files[self.path]
 
     def isdir(self):
         return self.isdir
-
-    def listdir(self):
-        # TODO list directorys #
-        return 0
