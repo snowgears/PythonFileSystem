@@ -22,9 +22,7 @@ def init(fsname):
 def create(filename, nbytes):
     # Call File object create method #
     # TODO handle exceptions for space #
-    # all bytes initialized to 0 #
     files[filename] = pyfile(filename, nbytes, False)
-    return 0
 
 def mkdir(dirname):
     directory = pyfile(dirname, 0, True) # initialize a new pyfile object with isdir set to true
@@ -32,10 +30,18 @@ def mkdir(dirname):
     print "[INFO] A new directory with location ~%s, has been created" % dirname
     return directory
 
-#def open(filename, mode):
-#    # Handle exceptions for file system suspension and whether file exists or not #
-#    # TODO #
-#    return 0
+def open(filename, mode):
+    # Handle exceptions for file system suspension and whether file exists or not #
+    if filename in files:
+        files[filename].open(mode)
+    elif filename not in files and mode == 'w':
+        # Note: File will be closed upon calling the close method.
+        # Figure this out later
+        # Default pyfile to 0 bytes and filename as the name
+        new_file = pyfile(filename, 0, False)
+        new_file.open('w')
+    else:
+        print 'Error : Reading file which does not exist'
 
 #def close(fd):
 #    # Takes file descriptor, locates file, and calls close method on file object directly #
@@ -56,11 +62,13 @@ def pos(fd):
 #    # Call seek method on file object itself #
 #    return 0
 
+""" """
 def read(fd, nbytes):
     if fd in files:
-        files[fs].read()
+        files[fd].read(nbytes)
     else:
         print 'File not in Directory. Use error handling later?'
+""" """
 
 def write(fd, writebuf):
     if fd in files:
@@ -105,6 +113,7 @@ class pyfile:
     contents = []
     isdir = False
     isopen = False
+    mode = ''
     position = 0
     size = 0
 
@@ -114,8 +123,15 @@ class pyfile:
         self.isdir = isdir
         # parse out name based on end of path #
 
-    def open(self, read):
+    def open(self, mode):
       self.isopen = True
+      if mode == 'r':
+          mode = 'r'
+      elif mode == 'w':
+          mode = 'w'
+      else:
+          print 'Invalid file mode'
+
       # read handles the 'r' and 'w' cases for read and write and sets variables internally #
 
     def close(self):
@@ -131,12 +147,10 @@ class pyfile:
         # TODO #
 
     #def read(self, bytes):
-    #    # TODO read amount of bytes from current position and return #
-    #    return 0
 
     def write(self, writeBuf):
         # Check if file is open
-        if isopen:
+        if isopen and mode == 'r':
             # Check if there are any new lines in the write buf
             if '\n' in writeBuf:
                 splitStr = writeBuf.split('\n')
@@ -147,7 +161,7 @@ class pyfile:
                 size += len(writeBuf)
                 contents.append(writeBuf)
         else:
-            print "Error : File is closed"
+            print "Error : File is closed or not allowed to write to"
 
     #def readLines(self, bytes):
     #    # Read all lines in file and return as list of strings (DOES NOT CHANGE POSITION) #
