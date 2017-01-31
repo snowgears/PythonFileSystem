@@ -51,10 +51,21 @@ class fs:
    'Base class for whole file system'
    files = {} # dictionary of all files in file system. --KEY=absolute path, --VALUE=File object
 
+   # MAY NOT NEED THIS INIT METHOD # TODO: Check on this later 
    def __init__(self, f, name):
       self.f = f # This is the root file of the file system that is created by default # # TODO #
       self.name = name
       # parse out name based on end of path #
+
+   def init(self, fsname):
+      if(os.path.isfile(fsname)):
+         f = open(fsname, 'w')
+         pfile.seek(0)
+         pfile.truncate()
+      else
+         # Just open it
+         f = open(fsname, 'w')
+         # Initialize the native file in which storage is done
    
    def create(self, filename, nbytes):
       # Call File object create method #
