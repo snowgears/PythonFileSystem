@@ -68,7 +68,10 @@ def pos(fd):
 
 def read(fd, nbytes):
     if fd in files:
-        files[fd].read(nbytes)
+        readString = files[fd].read(nbytes)
+        #assuming we have to print out readString
+    
+        print readString
     else:
         print 'File not in Directory. Use error handling later?'
 
@@ -191,9 +194,33 @@ class pyfile:
         else:
             print "Error : File is closed or not allowed to write to"
 
-    #def readLines(self, bytes):
+    def read(self, nbytes):
+        #Check if file is open and read mode
+        #how to deal with bytes
+        readString = ' '
+        if self.isopen and self.mode == 'r':              
+            if nbytes > self.maxsize:
+                print "Error: Exceeded file size "
+               
+            
+            if nbytes > self.size:
+                print "Error: Exceeded current file size "
+                
+
+            else:
+                for i in range(nbytes):
+                    readString+=str(self.contents[i])
+                    #position is affected by read?
+                    # self.pos+=i
+                return readString
+
+
+    def readLines(self):
     #    # Read all lines in file and return as list of strings (DOES NOT CHANGE POSITION) #
-    #    return 0
+         strList = []
+         for i in range(self.maxsize):
+            strList.append(self.contents[i])
+         return strList
 
     def delete(self):
         if self.isdir:
@@ -212,4 +239,3 @@ class pyfile:
 
     #def listdir(self):
     #    # TODO list directorys #
-    #    return 0
