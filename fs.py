@@ -44,10 +44,12 @@ def open(filename, mode):
     else:
         print 'Error : Reading file which does not exist'
 
-#def close(fd):
-#    # Takes file descriptor, locates file, and calls close method on file object directly #
-#    # TODO #
-#    return 0
+def close(fd):
+    if fd in files:
+        files[fd].close()
+    else:
+        print 'Error: Attempting to close file which does not exist'
+
 
 #def length(fd):
 #    # Call length method on file object itself #
@@ -63,13 +65,11 @@ def pos(fd):
 #    # Call seek method on file object itself #
 #    return 0
 
-""" """
 def read(fd, nbytes):
     if fd in files:
         files[fd].read(nbytes)
     else:
         print 'File not in Directory. Use error handling later?'
-""" """
 
 def write(fd, writebuf):
     if fd in files:
@@ -138,9 +138,9 @@ class pyfile:
       # read handles the 'r' and 'w' cases for read and write and sets variables internally #
 
     def close(self):
-        # TODO #
         self.isopen = False
-        # Check read/write variable to see if able to close #
+        self.mode   = '' # Resets the mode the file is at
+        print '[INFO] Closed file %s' % self.path
 
     def length(self):
         return len(self)
@@ -172,6 +172,7 @@ class pyfile:
     #    # Read all lines in file and return as list of strings (DOES NOT CHANGE POSITION) #
     #    return 0
 
+# Done
     #def delete(self):
     ## delete file (based on directory boolean, it will handle how it deletes the file internally) #
     #    return 0

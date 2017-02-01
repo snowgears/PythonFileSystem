@@ -25,5 +25,11 @@ def main():
     fs.write('tmp.dat', 'a\nb\nc\n')
     fs.write('d', 'fasd')
 
+    # Test close file
+    print '\nTesting closeing files\n'
+    fs.close('file1.txt')
+    fs.write('file1.txt', 'Something goes in here.')
+    fs.close('asdf')
+
 if __name__ == '__main__':
     main()
