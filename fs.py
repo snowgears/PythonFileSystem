@@ -156,15 +156,29 @@ class pyfile:
         if self.isopen and self.mode == 'w':
             # Check if there are any new lines in the write buf
             if '\n' in writeBuf:
-                print '[INFO] Printing things with new lines'
                 splitStr = writeBuf.split('\n')
+                splitStr = splitStr[:-1] # Removes last element, which is empty
+
+                # Checks if entire buffer fits. Quite inefficient however,
+                bufsize = 0
                 for line in splitStr:
-                    self.size += len(line) + 1
-                    self.contents.append(line + '\n')
+                    bufsize += len(line) + 1
+
+                if self.size + bufsize < self.maxsize:
+                    print '[INFO] Printing things with new lines'
+                    for line in splitStr:
+                        self.size += len(line) + 1
+                        self.contents.append(line + '\n')
+                else:
+                    print 'Error. Exceeded Write buffer size (on \\n strings)'
             else: # No new line chracter
-                print '[INFO] Writing %s to file %s' % (writeBuf, self.path)
-                self.size += len(writeBuf)
-                self.contents.append(writeBuf)
+                # Check if buffer size is exceeded
+                if self.size + len(writeBuf) < self.maxsize:
+                    print '[INFO] Writing %s to file %s' % (writeBuf, self.path)
+                    self.size += len(writeBuf)
+                    self.contents.append(writeBuf)
+                else:
+                    print 'Error. Exceeded Write buffer size'
         else:
             print "Error : File is closed or not allowed to write to"
 
@@ -172,7 +186,6 @@ class pyfile:
     #    # Read all lines in file and return as list of strings (DOES NOT CHANGE POSITION) #
     #    return 0
 
-# Done
     #def delete(self):
     ## delete file (based on directory boolean, it will handle how it deletes the file internally) #
     #    return 0
