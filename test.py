@@ -8,6 +8,7 @@ def main():
     fs.create('tmp.dat', 3)
     fs.create('other.c', 2)
     fs.create('d', 10)
+    fs.create('ex', 10)
 
     print '\nCurrent filesystem: %s'
     for files in fs.files.keys():
@@ -30,10 +31,11 @@ def main():
     fs.write('d', 'fasd')
 
     # Test close file
-    print '\nTesting closing files\n'
+    print '\nTesting closing files'
     fs.close('file1.txt')
     fs.write('file1.txt', 'Something goes in here.')
     fs.close('asdf')
+    fs.close('ex')
 
     # Test length of file
     print '\nTesting length of file'

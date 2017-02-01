@@ -14,13 +14,10 @@ def init(fsname):
         file.seek(0)
         file.truncate()
     else:
-        # Just open it
         file = open(fsname, 'w')
-        # Initialize the native file in which storage is done
     print "[INFO] FileSystem with name %s has been created." % f
 
 def create(filename, nbytes):
-    # Call File object create method #
     # TODO handle exceptions for space #
     files[filename] = pyfile(filename, nbytes, False)
     print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
@@ -45,10 +42,10 @@ def open(filename, mode):
         print 'Error : Reading file which does not exist'
 
 def close(fd):
-    if fd in files:
+    try:
         files[fd].close()
-    else:
-        print 'Error: Attempting to close file which does not exist'
+    except LookupError:
+        print "Error: File not opened"
 
 
 def length(fd):
@@ -141,9 +138,12 @@ class pyfile:
       # read handles the 'r' and 'w' cases for read and write and sets variables internally #
 
     def close(self):
-        self.isopen = False
-        self.mode   = '' # Resets the mode the file is at
-        print '[INFO] Closed file %s' % self.path
+        if self.isopen:
+            self.isopen = False
+            self.mode   = '' # Resets the mode the file is at
+            print '[INFO] Closed file %s' % self.path
+        else:
+            print '[INFO] %s already closed' % self.path
 
     def length(self):
         return self.size
