@@ -51,9 +51,12 @@ def close(fd):
         print 'Error: Attempting to close file which does not exist'
 
 
-#def length(fd):
-#    # Call length method on file object itself #
-#    return 0
+def length(fd):
+    if fd in files:
+        print '[INFO] Size of file %s: %d' % (fd, files[fd].length())
+    else:
+        print 'Error: File not in directory'
+
 
 def pos(fd):
     file = files[fd]
@@ -143,7 +146,7 @@ class pyfile:
         print '[INFO] Closed file %s' % self.path
 
     def length(self):
-        return len(self)
+        return self.size
 
     def seek(self, position):
         self.position = position

@@ -30,10 +30,14 @@ def main():
     fs.write('d', 'fasd')
 
     # Test close file
-    print '\nTesting closeing files\n'
+    print '\nTesting closing files\n'
     fs.close('file1.txt')
     fs.write('file1.txt', 'Something goes in here.')
     fs.close('asdf')
+
+    # Test length of file
+    print '\nTesting length of file'
+    fs.length('tmp.dat')
 
 if __name__ == '__main__':
     main()
