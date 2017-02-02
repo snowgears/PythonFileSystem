@@ -1,4 +1,5 @@
 import os
+import pickle 
 
 # Global Variables #
 files = {} # dictionary of all files in file system. --KEY=absolute path, --VALUE=File object
@@ -9,6 +10,12 @@ f = ""
 
 def init(fsname):
     f = fsname
+    dataFileName = '%s.fssave' % f
+    print 'File that will possibly be loaded is named %s' % dataFileName
+    if os.path.isfile(dataFileName):
+    	with open(dataFileName, 'rb') as handle:
+    		files = pickle.load(handle)
+
     if os.path.isfile(fsname):
         file = open(fsname, 'w')
         file.seek(0)
@@ -111,6 +118,18 @@ def listdir(filename):
 def suspend():
     # TODO supspend filesystem operations (set a variable) #
     # All file objects in data structure will be serialized and saved to a save file #
+    
+    dataFileName = '%s.fssave' % f
+
+    print 'File that is saving will be named %s' % dataFileName
+    #print 'File full path is %s' % os.path.join(os.getcwd(), dataFileName)
+
+    datafile = open(dataFileName, 'wb')
+    pickle.dump(files, datafile)
+    datafile.close()
+
+    # with open(dataFileName, 'wb') as handle:
+    # 	pickle.dump(files, handle, protocol=pickle.HIGHEST_PROTOCOL)
     return 0
 
 def resume():
