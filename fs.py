@@ -18,16 +18,19 @@ def init(fsname):
     print "[INFO] FileSystem with name %s has been created." % f
 
 def create(filename, nbytes):
-    # TODO handle exceptions for space #
-    files[filename] = pyfile(filename, nbytes, False)
-    print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
+    try:
+        files[filename] = pyfile(filename, nbytes, False)
+        print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
+    except: # This needs to be handled better
+        print 'Error allocating number of bytes'
+
     return files[filename]
 
 def mkdir(dirname):
     directory = pyfile(dirname, 0, True) # initialize a new pyfile object with isdir set to true
     files[dirname] = directory # add the pyfile object to the dictionary global datastructure
     print "[INFO] A new directory with location ~%s, has been created" % dirname
-    return directory
+    return directory # Is this needed?
 
 def open(filename, mode):
     # Handle exceptions for file system suspension and whether file exists or not #
@@ -50,52 +53,53 @@ def close(fd):
 
 
 def length(fd):
-    if fd in files:
+    try:
         print '[INFO] Size of file %s: %d' % (fd, files[fd].length())
-    else:
+    except LookupError:
         print 'Error: File not in directory'
 
 
 def pos(fd):
-    file = files[fd]
-    if file != None:
-        return file.position
-    return -1
+    try:
+        print '%s position: %d' % (fd, files[fd].position)
+    except LookupError:
+        print 'Error: File not in directory'
 
 #def seek(fd, pos):
 #    # Call seek method on file object itself #
 #    return 0
 
 def read(fd, nbytes):
-    if fd in files:
+    try:
         readString = files[fd].read(nbytes)
         #assuming we have to print out readString
         print readString
-    else:
-        print 'File not in Directory. Use error handling later?'
+    except LookupError:
+        print 'Error: File not in directory'
 
 def write(fd, writebuf):
-    if fd in files:
-        # files[fd].open() NEEDS TO BE OPEN FIRST?
+    try:
         files[fd].write(writebuf)
-    else:
-        print "Not in directory. Error handling will go here"
+    except LookupError:
+        print 'Error: File not in directory'
 
 def readlines(fd):
-    if fd in files:
+    try:
         file_contents = files[fd].readLines()
         # Later, we will put in a way to return a list
         # but for now, print to screen
         for lines in file_contents:
             print '%s' % lines
-    else:
-        print "Not in directory. Error handling will go here"
+    except LookupError:
+        print 'Error: File not in directory'
 
 def delfile(filename):
-    if filename in files: # TODO will also need to check that it is not a directory
+    # Also needs to check if not a directory
+    try:
         files[filename].delete()
         return True
-    return False
+    except:
+        return False
 
 def deldir(dirname):
     # Remove file from dictionary (if it exists), update all keys in dictionary with this directory above them, call delete method on file object itself #
@@ -165,8 +169,6 @@ class pyfile:
     def seek(self, position):
         self.position = position
         # TODO #
-
-    #def read(self, bytes):
 
     def write(self, writeBuf):
         # Check if file is open
