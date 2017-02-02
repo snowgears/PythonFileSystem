@@ -70,7 +70,6 @@ def read(fd, nbytes):
     if fd in files:
         readString = files[fd].read(nbytes)
         #assuming we have to print out readString
-    
         print readString
     else:
         print 'File not in Directory. Use error handling later?'
@@ -82,9 +81,15 @@ def write(fd, writebuf):
     else:
         print "Not in directory. Error handling will go here"
 
-#def readlines(fd):
-#    # Call readlines method on file object itself #
-#    return 0
+def readlines(fd):
+    if fd in files:
+        file_contents = files[fd].readLines()
+        # Later, we will put in a way to return a list
+        # but for now, print to screen
+        for lines in file_contents:
+            print '%s' % lines
+    else:
+        print "Not in directory. Error handling will go here"
 
 def delfile(filename):
     if filename in files: # TODO will also need to check that it is not a directory
@@ -120,7 +125,6 @@ def resume():
 # python file class used to store information about each file object #
 class pyfile:
     'Base class for all files stored in the file system'
-    contents = []
     isdir = False
     isopen = False
     mode = ''
@@ -131,6 +135,7 @@ class pyfile:
         self.path = path
         self.maxsize = maxsize
         self.isdir = isdir
+        self.contents = []
         # parse out name based on end of path #
 
     def open(self, mode):
@@ -198,15 +203,11 @@ class pyfile:
         #Check if file is open and read mode
         #how to deal with bytes
         readString = ' '
-        if self.isopen and self.mode == 'r':              
+        if self.isopen and self.mode == 'r':
             if nbytes > self.maxsize:
                 print "Error: Exceeded file size "
-               
-            
             if nbytes > self.size:
                 print "Error: Exceeded current file size "
-                
-
             else:
                 for i in range(nbytes):
                     readString+=str(self.contents[i])
@@ -216,17 +217,17 @@ class pyfile:
 
 
     def readLines(self):
-    #    # Read all lines in file and return as list of strings (DOES NOT CHANGE POSITION) #
          strList = []
-         for i in range(self.maxsize):
-            strList.append(self.contents[i])
+         for lines in self.contents:
+             strList.append(lines)
          return strList
 
     def delete(self):
         if self.isdir:
             for key in files:
                 file = d[key]
-                if file.isdir and file.path in self.path: # TODO this may need to be modified (maybe create an external comparison method)
+                if file.isdir and file.path in self.path:
+                    # TODO this may need to be modified (maybe create an external comparison method)
                     del files[file.path]
         else:
             del files[self.path]

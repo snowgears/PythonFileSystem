@@ -24,11 +24,11 @@ def main():
 
     # Test writing to file
     print '\nTesting writing to files'
-    fs.write('file1.txt', 'Something goes in here.')
-    fs.write('tmp.dat', 'a\nb\nc\n')
-    fs.write('tmp.dat', 'a\n')
-    fs.write('other.c', 'THIS_IS_MORE_THAN_2_BYTES')
-    fs.write('d', 'fasd')
+    fs.write('file1.txt', 'Something goes in here.') # Should write
+    fs.write('tmp.dat', 'a\nb\nc\n') # Shouldn't write
+    fs.write('tmp.dat', 'a\n') # Should write
+    fs.write('other.c', 'THIS_IS_MORE_THAN_2_BYTES') # shouldn't write
+    fs.write('d', 'fasd') # Should'nt write
 
     # Test close file
     print '\nTesting closing files'
@@ -40,6 +40,11 @@ def main():
     # Test length of file
     print '\nTesting length of file'
     fs.length('tmp.dat')
+
+    # Test reading entire file
+    print '\nTesting readlines()'
+    fs.readlines('file1.txt')
+    fs.readlines('tmp.dat')
 
 if __name__ == '__main__':
     main()
