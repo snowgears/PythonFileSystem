@@ -41,5 +41,9 @@ def main():
     print '\nTesting length of file'
     fs.length('tmp.dat')
 
+    # Test saving files
+    print '\nTesting saving of files'
+    fs.suspend()
+
 if __name__ == '__main__':
     main()
