@@ -1,52 +1,69 @@
 import os
 
 # Global Variables #
-files = {} # dictionary of all files in file system. --KEY=absolute path, --VALUE=File object
+# Directories stored in files as a hash.
+#   key = absolute path
+#   value = file object
+files = {}
 f = ""
 
-# Methods to call using the python terminal #
-# Many of these methods are just wrapper calls to the underlying pyfile objects #
-
 def init(fsname):
+    """ init(fsname)
+        Initializes the filesystem. Destroys the contents of the
+        file if a file already exists. """
     f = fsname
-    if os.path.isfile(fsname):
+    if os.path.isfile(f):
         file = open(fsname, 'w')
         file.seek(0)
         file.truncate()
-    else:
-        file = open(fsname, 'w')
+        file.close()
     print "[INFO] FileSystem with name %s has been created." % f
 
+
 def create(filename, nbytes):
+    """ create(filename, nbytes)
+        Creates a file with the name 'filenames' and places the file
+        in a hash table. The absolute path will be they key. """
+    # Still need to implament exception for when allocation fails
+    # and figure out how to initialize bytes to NULLs
     try:
         files[filename] = pyfile(filename, nbytes, False)
         print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
-    except: # This needs to be handled better
+    except:
         print 'Error allocating number of bytes'
-
     return files[filename]
 
+
 def mkdir(dirname):
+    """ mkdir(dirname)
+        Creates directory and stores the key in the files hash. """
+    # Need to implament a way to change directories with absolut path
     directory = pyfile(dirname, 0, True) # initialize a new pyfile object with isdir set to true
     files[dirname] = directory # add the pyfile object to the dictionary global datastructure
     print "[INFO] A new directory with location ~%s, has been created" % dirname
-    return directory # Is this needed?
+
 
 def open(filename, mode):
-    # Handle exceptions for file system suspension and whether file exists or not #
+    """ open(filename, mode)
+        Opens a file in the filesystem. If the file is not in the
+        filesyste, create a file and continue on."""
+    # Handle exceptions for file system suspension
+    # and whether file exists or not
     if filename in files:
+        # Open file if in filesystem
         files[filename].open(mode)
     elif filename not in files and mode == 'w':
-        # Note: File will be closed upon calling the close method.
-        # Figure this out later
-        # Default pyfile to 0 bytes and filename as the name
+        # If not, create file in filesystem
         new_file = pyfile(filename, 0, False)
         new_file.open('w')
     else:
-        print 'Error : Reading file which does not exist'
+        # Exceptions go here
+        print 'Error : something went wrong in open()'
+
 
 def close(fd):
     try:
+        # Try closing file
         files[fd].close()
     except LookupError:
         print "Error: File not opened"
@@ -121,9 +138,8 @@ def listdir(filename):
             print file.path
 
 def suspend():
-    # TODO supspend filesystem operations (set a variable) #
-    # All file objects in data structure will be serialized and saved to a save file #
-    return 0
+    pickle.dump(files, open("data.p", "wb"), pickle.HIGHEST_PROTOCOL)
+
 
 def resume():
     # TODO resume filesystem operations (set a variable) #
