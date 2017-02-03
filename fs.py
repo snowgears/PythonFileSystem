@@ -58,16 +58,17 @@ def length(fd):
     except LookupError:
         print 'Error: File not in directory'
 
-
 def pos(fd):
     try:
         print '%s position: %d' % (fd, files[fd].position)
     except LookupError:
         print 'Error: File not in directory'
 
-#def seek(fd, pos):
-#    # Call seek method on file object itself #
-#    return 0
+def seek(fd, pos):
+    if fd in files:
+        files[fs].seek(pos)
+    else:
+        print 'Error : File not in directory'
 
 def read(fd, nbytes):
     try:
@@ -102,7 +103,9 @@ def delfile(filename):
         return False
 
 def deldir(dirname):
-    # Remove file from dictionary (if it exists), update all keys in dictionary with this directory above them, call delete method on file object itself #
+    # Remove file from dictionary (if it exists), update all keys in
+    # dictionary with this directory above them, call delete
+    # method on file object itself #
     return 0
 
 def isdir(filename):
@@ -132,7 +135,6 @@ class pyfile:
     isdir = False
     isopen = False
     mode = ''
-    position = 0
     size = 0
 
     def __init__(self, path, maxsize, isdir):
@@ -140,6 +142,7 @@ class pyfile:
         self.maxsize = maxsize
         self.isdir = isdir
         self.contents = []
+        self.position = 0
         # parse out name based on end of path #
 
     def open(self, mode):
@@ -152,8 +155,7 @@ class pyfile:
             print '[INFO] Opened file %s in mode \'%s\'' % (self.path, mode)
         else:
             print 'Invalid file mode'
-
-      # read handles the 'r' and 'w' cases for read and write and sets variables internally #
+            # read handles the 'r' and 'w' cases for read and write and sets variables internally #
 
     def close(self):
         if self.isopen:
@@ -166,9 +168,15 @@ class pyfile:
     def length(self):
         return self.size
 
-    def seek(self, position):
-        self.position = position
-        # TODO #
+    def seek(self, pos):
+        if pos < 0:
+            print 'Error : Negative position'
+        elif pos > self.maxsize:
+            print 'Error : Exceeded size'
+        else:
+            self.position = pos
+            print '[INFO] Placing position to %d.' % pos
+
 
     def write(self, writeBuf):
         # Check if file is open
