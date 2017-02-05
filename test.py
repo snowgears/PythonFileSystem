@@ -11,7 +11,7 @@ def main():
     fs.create('ex', 10)
 
     print '\nCurrent filesystem: %s'
-    for files in fs.files.keys():
+    for files in fs.glb.files.keys():
         print "File : %s" % files
 
     # Test Opening files

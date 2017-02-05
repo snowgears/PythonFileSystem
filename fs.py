@@ -4,20 +4,23 @@ import os
 # Directories stored in files as a hash.
 #   key = absolute path
 #   value = file object
-files = {}
-f = ""
+class glb:
+    files = {}
+    curr_dir = '/'
+    fsname = None
 
 def init(fsname):
     """ init(fsname)
         Initializes the filesystem. Destroys the contents of the
         file if a file already exists. """
-    f = fsname
-    if os.path.isfile(f):
+    glb.fsname = fsname
+    if os.path.isfile(fsname):
+        # If file exists on real filesystem, delete contents
         file = open(fsname, 'w')
         file.seek(0)
         file.truncate()
         file.close()
-    print "[INFO] FileSystem with name %s has been created." % f
+    print "[INFO] FileSystem with name %s has been created." % fsname
 
 
 def create(filename, nbytes):
@@ -27,19 +30,18 @@ def create(filename, nbytes):
     # Still need to implament exception for when allocation fails
     # and figure out how to initialize bytes to NULLs
     try:
-        files[filename] = pyfile(filename, nbytes, False)
+        filename = glb.curr_dir + filename
+        glb.files[filename] = pyfile(filename, nbytes, False)
         print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
     except:
         print 'Error allocating number of bytes'
-    return files[filename]
 
 
 def mkdir(dirname):
     """ mkdir(dirname)
         Creates directory and stores the key in the files hash. """
-    # Need to implament a way to change directories with absolut path
-    directory = pyfile(dirname, 0, True) # initialize a new pyfile object with isdir set to true
-    files[dirname] = directory # add the pyfile object to the dictionary global datastructure
+    dirname = glb.curr_dir + dirname
+    glb.files[dirname] = pyfile(dirname, 0, True)
     print "[INFO] A new directory with location ~%s, has been created" % dirname
 
 
@@ -49,11 +51,12 @@ def open(filename, mode):
         filesyste, create a file and continue on."""
     # Handle exceptions for file system suspension
     # and whether file exists or not
-    if filename in files:
+    if filename in glb.files:
         # Open file if in filesystem
-        files[filename].open(mode)
-    elif filename not in files and mode == 'w':
+        glb.files[filename].open(mode)
+    elif filename not in glb.files and mode == 'w':
         # If not, create file in filesystem
+        # Write will handle adding file to hash
         new_file = pyfile(filename, 0, False)
         new_file.open('w')
     else:
@@ -64,32 +67,32 @@ def open(filename, mode):
 def close(fd):
     try:
         # Try closing file
-        files[fd].close()
+        glb.files[fd].close()
     except LookupError:
         print "Error: File not opened"
 
 
 def length(fd):
     try:
-        print '[INFO] Size of file %s: %d' % (fd, files[fd].length())
+        print '[INFO] Size of file %s: %d' % (fd, glb.files[fd].length())
     except LookupError:
         print 'Error: File not in directory'
 
 def pos(fd):
     try:
-        print '%s position: %d' % (fd, files[fd].position)
+        print '%s position: %d' % (fd, glb.files[fd].position)
     except LookupError:
         print 'Error: File not in directory'
 
 def seek(fd, pos):
-    if fd in files:
-        files[fs].seek(pos)
+    if fd in glb.files:
+        glb.files[fs].seek(pos)
     else:
         print 'Error : File not in directory'
 
 def read(fd, nbytes):
     try:
-        readString = files[fd].read(nbytes)
+        readString = glb.files[fd].read(nbytes)
         #assuming we have to print out readString
         print readString
     except LookupError:
@@ -97,13 +100,13 @@ def read(fd, nbytes):
 
 def write(fd, writebuf):
     try:
-        files[fd].write(writebuf)
+        glb.files[fd].write(writebuf)
     except LookupError:
         print 'Error: File not in directory'
 
 def readlines(fd):
     try:
-        file_contents = files[fd].readLines()
+        file_contents = glb.files[fd].readLines()
         # Later, we will put in a way to return a list
         # but for now, print to screen
         for lines in file_contents:
@@ -114,10 +117,17 @@ def readlines(fd):
 def delfile(filename):
     # Also needs to check if not a directory
     try:
-        files[filename].delete()
+        glb.files[filename].delete()
         return True
     except:
         return False
+
+def chdir(dirname):
+    #if dirname in files and files[dirname].isdir():
+    if dirname in glb.files:
+        glb.curr_dir = dirname
+    else:
+        print 'Error: Directory not found'
 
 def deldir(dirname):
     # Remove file from dictionary (if it exists), update all keys in
@@ -132,7 +142,7 @@ def isdir(filename):
 # List all directories from the dictionary data structure #
 def listdir(filename):
     #TODO in the future this will need to only list directories that are nested within the 'filename'
-    for key in files:
+    for key in glb.files:
         file = d[key]
         if file.isdir:
             print file.path
@@ -148,10 +158,6 @@ def resume():
 # python file class used to store information about each file object #
 class pyfile:
     'Base class for all files stored in the file system'
-    isdir = False
-    isopen = False
-    mode = ''
-    size = 0
 
     def __init__(self, path, maxsize, isdir):
         self.path = path
@@ -159,6 +165,10 @@ class pyfile:
         self.isdir = isdir
         self.contents = []
         self.position = 0
+        self.isdir = False
+        self.isopen = False
+        self.mode = ''
+        self.size = 0
         # parse out name based on end of path #
 
     def open(self, mode):
