@@ -1,9 +1,5 @@
 import os
 
-# Global Variables #
-# Directories stored in files as a hash.
-#   key = absolute path
-#   value = file object
 class glb:
     files = {}
     curr_dir = '/'
@@ -13,7 +9,6 @@ class glb:
 def init(fsname):
     glb.fsname = fsname
     if os.path.isfile(fsname):
-        # If file exists on real filesystem, delete contents
         file = open(fsname, 'w')
         file.seek(0)
         file.truncate()
@@ -24,25 +19,26 @@ def init(fsname):
 
 
 def create(filename, nbytes):
-    # Still need to implament exception for when allocation fails
-    # and figure out how to initialize bytes to NULLs
-    try:
-        glb.files[glb.curr_dir].add_file(filename)
-        glb.files[filename] = pyfile(filename, nbytes, False)
-        print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
-    except:
-        print 'Error allocating number of bytes'
+    if str(glb.curr_dir) == '/':
+        dict_filename = glb.curr_dir + filename
+    else:
+        dict_filename = glb.curr_dir + '/' + filename
+    glb.files[glb.curr_dir].add_file(filename)
+    glb.files[dict_filename] = pyfile(filename, nbytes, False)
+    print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
 
 
 def mkdir(dirname):
+    if str(glb.curr_dir) == '/':
+        dict_dirname = glb.curr_dir + dirname
+    else:
+        dict_dirname = glb.curr_dir + '/' + dirname
     glb.files[glb.curr_dir].add_file(dirname)
-    glb.files[dirname] = pyfile(dirname, 0, True)
-    print "[INFO] A new directory with location /%s, has been created" % dirname
+    glb.files[dict_dirname] = pyfile(dirname, 0, True)
+    print "[INFO] A new directory with location %s, has been created" % dirname
 
 
 def open(filename, mode):
-    # Handle exceptions for file system suspension
-    # and whether file exists or not
     if filename in glb.files:
         # Open file if in filesystem
         glb.files[filename].open(mode)
@@ -125,19 +121,21 @@ def delfile(filename):
 
 def chdir(dirname):
     # Special case, go back a directory
-    if str(dirname) == '..':
+    if str(dirname) == '..' or str(dirname) == '../':
         dir_list = glb.curr_dir.split('/')
         glb.curr_dir = '/'
         # Set directory path
-        for dir in dir_list[1:-2]:
+        for dir in dir_list[1:-1]:
             glb.curr_dir = glb.curr_dir + dir
-        glb.curr_dir = glb.curr_dir + '/'
     # Special case, go to same directory
     elif str(dirname) == '.':
         return # This does nothing, just here to not trigger else statement
     # Changes to different directory, if in the file hash
-    elif in_curr_dir(dirname):
-        glb.curr_dir = glb.curr_dir + dirname + '/'
+    elif glb.files[glb.curr_dir].in_curr_dir(dirname):
+        if glb.curr_dir == '/':
+            glb.curr_dir = glb.curr_dir + dirname
+        else:
+            glb.curr_dir = glb.curr_dir + '/' + dirname
     else:
         print 'Error: Directory not found'
 
@@ -300,8 +298,11 @@ class pyfile:
     ### DIRECTORY OPERATIONS
     ###########################################################################
     def add_file(self, filename):
-        if self.isdir:
+        if self.isdir and filename not in self.contents:
             self.contents.append(filename)
+        else:
+            print "Error Making Directory"
+
 
     def in_curr_dir(self, filename):
         if self.isdir and filename in self.contents:
