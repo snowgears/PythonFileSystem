@@ -398,17 +398,6 @@ class pyfile:
             return self.position
 
 
-    def delete(self):
-        if self.isdir:
-            for key in files:
-                file = d[key]
-                if file.isdir and file.path in self.path:
-                    # TODO this may need to be modified (maybe create an external comparison method)
-                    del files[file.path]
-        else:
-            del files[self.path]
-
-
     ###########################################################################
     ### DIRECTORY OPERATIONS
     ###########################################################################
