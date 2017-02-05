@@ -6,7 +6,22 @@ class glb:
     curr_dir = '/' # Tracking variable for current directory
     fsname = None
 
+###########################################################################
+### HELPER FUNCTIONS
+###########################################################################
+def generate_filepath(filename):
+    """ generate_filepath(filename)
+        Generates a full filepath for a directory / file. """
+    if str(glb.curr_dir) == '/': # Special case, root directory
+        dict_filename = glb.curr_dir + filename
+    else:
+        dict_filename = glb.curr_dir + '/' + filename
+    return dict_filename
 
+
+###########################################################################
+### fs module functions
+###########################################################################
 def init(fsname):
     glb.fsname = fsname
     if os.path.isfile(fsname):
@@ -20,47 +35,61 @@ def init(fsname):
 
 
 def create(filename, nbytes):
-    if str(glb.curr_dir) == '/':
-        dict_filename = glb.curr_dir + filename
-    else:
-        dict_filename = glb.curr_dir + '/' + filename
+    dict_filepath = generate_filepath(filename) # Name of filepath
     glb.files[glb.curr_dir].add_file(filename)
-    glb.files[dict_filename] = pyfile(filename, nbytes, False)
-    print '--[INFO] Created file %s with %d bytes created in %s.' % (filename, nbytes, glb.curr_dir)
+    glb.files[dict_filepath] = pyfile(filename, nbytes, False)
+    print '--[INFO] Created file %s with %d bytes created in %s.' \
+            % (filename, nbytes, glb.curr_dir)
 
 
 def mkdir(dirname):
-    if str(glb.curr_dir) == '/':
-        dict_dirname = glb.curr_dir + dirname
-    else:
-        dict_dirname = glb.curr_dir + '/' + dirname
+    dict_dirpath = generate_filepath(dirname) # Name of directory path
     glb.files[glb.curr_dir].add_file(dirname)
-    glb.files[dict_dirname] = pyfile(dirname, 0, True)
-    print "--[INFO] A new directory %s with location %s, has been created" % (dirname, glb.curr_dir)
+    glb.files[dict_dirpath] = pyfile(dirname, 0, True)
+    print "--[INFO] A new directory %s with location %s, has been created" \
+            % (dirname, glb.curr_dir)
+
 
 def open(filename, mode):
-    if filename in glb.files:
-        # Open file if in filesystem
-        glb.files[filename].open(mode)
-    elif filename not in glb.files and mode == 'w':
-        # If not, create file in filesystem
-        # Write will handle adding file to hash
-        new_file = pyfile(filename, 0, False)
-        new_file.open('w')
-        print '[INFO] Opening file which is not in directory'
+    if glb.files[glb.curr_dir].in_curr_dir(filename):
+        dict_filepath = generate_filepath(filename)
+        glb.files[dict_filepath].open(mode)
+        print '--[INFO] Opened file %s located in directory %s' \
+                % (filename, glb.curr_dir)
     else:
-        # Exceptions go here
-        print 'Error : something went wrong in open()'
+        print '--[ERROR] File not in directory'
+
+    #elif filename not in glb.files and mode == 'w':
+    #    # If not, create file in filesystem
+    #    # Write will handle adding file to hash
+    #    new_file = pyfile(filename, 0, False)
+    #    new_file.open('w')
+    #    print '[INFO] Opening file which is not in directory'
+    #else:
+    #    # Exceptions go here
+    #    print 'Error : something went wrong in open()'
+
+
+def write(fd, writebuf):
+    if glb.files[glb.curr_dir].in_curr_dir(fd):
+        dict_filepath = generate_filepath(fd)
+        glb.files[dict_filepath].write(writebuf)
+        print '--[INFO] Written to file %s' % fd
+    #try:
+    #    #fd = glb.curr_dir + fd
+    #    glb.files[fd].write(writebuf)
+    #except LookupError:
+    #    print 'Error: File not in directory'
 
 
 def close(fd):
-    try:
-        # Try closing file
-        glb.files[fd].close()
-    except LookupError:
-        print "Error: File not opened"
+    if glb.files[glb.curr_dir].in_curr_dir(fd):
+        dict_filepath = generate_filepath(fd)
+        glb.files[dict_filepath].close()
+        print '--[INFO] Closed file %s located in director %s' \
+                % (fd, glb.curr_dir)
 
-
+###################################################
 def length(fd):
     try:
         print '[INFO] Size of file %s: %d' % (fd, glb.files[fd].length())
@@ -87,14 +116,6 @@ def read(fd, nbytes):
         readString = glb.files[fd].read(nbytes)
         #assuming we have to print out readString
         print readString
-    except LookupError:
-        print 'Error: File not in directory'
-
-
-def write(fd, writebuf):
-    try:
-        #fd = glb.curr_dir + fd
-        glb.files[fd].write(writebuf)
     except LookupError:
         print 'Error: File not in directory'
 
@@ -201,23 +222,21 @@ class pyfile:
         self.isopen = True
         if mode == 'r':
             self.mode = 'r'
-            print '[INFO] Opened file %s in mode \'%s\'' % (self.path, mode)
+            print '--[INFO] Opened file %s in mode \'%s\'' % (self.path, mode)
         elif mode == 'w':
             self.mode = 'w'
-            print '[INFO] Opened file %s in mode \'%s\'' % (self.path, mode)
+            print '--[INFO] Opened file %s in mode \'%s\'' % (self.path, mode)
         else:
-            print 'Invalid file mode'
-            # read handles the 'r' and 'w' cases for
-            # read and write and sets variables internally
+            print '--[ERROR] Invalid file mode'
 
 
     def close(self):
         if self.isopen:
             self.isopen = False
             self.mode   = 'closed' # Resets the mode the file is at
-            print '[INFO] Closed file %s' % self.path
+            print '--[INFO] Closed file %s' % self.path
         else:
-            print '[INFO] %s already closed' % self.path
+            print '--[ERROR] %s already closed' % self.path
 
 
     def length(self):
@@ -248,7 +267,7 @@ class pyfile:
                     bufsize += len(line) + 1
 
                 if self.size + bufsize < self.maxsize:
-                    print '[INFO] Printing things with new lines'
+                    print '--[INFO] Printing things with new lines'
                     for line in splitStr:
                         self.size += len(line) + 1
                         self.contents.append(line + '\n')
@@ -257,13 +276,14 @@ class pyfile:
             else: # No new line chracter
                 # Check if buffer size is exceeded
                 if self.size + len(writeBuf) < self.maxsize:
-                    print '[INFO] Writing %s to file %s' % (writeBuf, self.path)
+                    print '--[INFO] Writing %s to file %s' \
+                            % (writeBuf, self.path)
                     self.size += len(writeBuf)
                     self.contents.append(writeBuf)
                 else:
-                    print 'Error. Exceeded Write buffer size'
+                    print '--[ERROR] Exceeded Write buffer size'
         else:
-            print "Error : File is closed or not allowed to write to"
+            print "--[ERROR] File is closed or not allowed to write to"
 
 
     def read(self, nbytes):
