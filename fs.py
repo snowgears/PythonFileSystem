@@ -9,10 +9,8 @@ class glb:
     curr_dir = '/'
     fsname = None
 
+
 def init(fsname):
-    """ init(fsname)
-        Initializes the filesystem. Destroys the contents of the
-        file if a file already exists. """
     glb.fsname = fsname
     if os.path.isfile(fsname):
         # If file exists on real filesystem, delete contents
@@ -20,17 +18,16 @@ def init(fsname):
         file.seek(0)
         file.truncate()
         file.close()
+    # Initalize a root directory
+    glb.files['/'] = pyfile('/', 0, True)
     print "[INFO] FileSystem with name %s has been created." % fsname
 
 
 def create(filename, nbytes):
-    """ create(filename, nbytes)
-        Creates a file with the name 'filenames' and places the file
-        in a hash table. The absolute path will be they key. """
     # Still need to implament exception for when allocation fails
     # and figure out how to initialize bytes to NULLs
     try:
-        filename = glb.curr_dir + filename
+        glb.files[glb.curr_dir].add_file(filename)
         glb.files[filename] = pyfile(filename, nbytes, False)
         print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
     except:
@@ -38,17 +35,12 @@ def create(filename, nbytes):
 
 
 def mkdir(dirname):
-    """ mkdir(dirname)
-        Creates directory and stores the key in the files hash. """
-    dirname = glb.curr_dir + dirname
+    glb.files[glb.curr_dir].add_file(dirname)
     glb.files[dirname] = pyfile(dirname, 0, True)
-    print "[INFO] A new directory with location ~%s, has been created" % dirname
+    print "[INFO] A new directory with location /%s, has been created" % dirname
 
 
 def open(filename, mode):
-    """ open(filename, mode)
-        Opens a file in the filesystem. If the file is not in the
-        filesyste, create a file and continue on."""
     # Handle exceptions for file system suspension
     # and whether file exists or not
     if filename in glb.files:
@@ -59,6 +51,7 @@ def open(filename, mode):
         # Write will handle adding file to hash
         new_file = pyfile(filename, 0, False)
         new_file.open('w')
+        print '[INFO] Opening file which is not in directory'
     else:
         # Exceptions go here
         print 'Error : something went wrong in open()'
@@ -78,17 +71,20 @@ def length(fd):
     except LookupError:
         print 'Error: File not in directory'
 
+
 def pos(fd):
     try:
         print '%s position: %d' % (fd, glb.files[fd].position)
     except LookupError:
         print 'Error: File not in directory'
 
+
 def seek(fd, pos):
     if fd in glb.files:
         glb.files[fs].seek(pos)
     else:
         print 'Error : File not in directory'
+
 
 def read(fd, nbytes):
     try:
@@ -98,11 +94,14 @@ def read(fd, nbytes):
     except LookupError:
         print 'Error: File not in directory'
 
+
 def write(fd, writebuf):
     try:
+        #fd = glb.curr_dir + fd
         glb.files[fd].write(writebuf)
     except LookupError:
         print 'Error: File not in directory'
+
 
 def readlines(fd):
     try:
@@ -114,6 +113,7 @@ def readlines(fd):
     except LookupError:
         print 'Error: File not in directory'
 
+
 def delfile(filename):
     # Also needs to check if not a directory
     try:
@@ -122,12 +122,25 @@ def delfile(filename):
     except:
         return False
 
+
 def chdir(dirname):
-    #if dirname in files and files[dirname].isdir():
-    if dirname in glb.files:
-        glb.curr_dir = dirname
+    # Special case, go back a directory
+    if str(dirname) == '..':
+        dir_list = glb.curr_dir.split('/')
+        glb.curr_dir = '/'
+        # Set directory path
+        for dir in dir_list[1:-2]:
+            glb.curr_dir = glb.curr_dir + dir
+        glb.curr_dir = glb.curr_dir + '/'
+    # Special case, go to same directory
+    elif str(dirname) == '.':
+        return # This does nothing, just here to not trigger else statement
+    # Changes to different directory, if in the file hash
+    elif in_curr_dir(dirname):
+        glb.curr_dir = glb.curr_dir + dirname + '/'
     else:
         print 'Error: Directory not found'
+
 
 def deldir(dirname):
     # Remove file from dictionary (if it exists), update all keys in
@@ -135,9 +148,11 @@ def deldir(dirname):
     # method on file object itself #
     return 0
 
+
 def isdir(filename):
     # Call isdir() on file object itself #
     return 0
+
 
 # List all directories from the dictionary data structure #
 def listdir(filename):
@@ -147,6 +162,7 @@ def listdir(filename):
         if file.isdir:
             print file.path
 
+
 def suspend():
     pickle.dump(files, open("data.p", "wb"), pickle.HIGHEST_PROTOCOL)
 
@@ -155,22 +171,27 @@ def resume():
     # TODO resume filesystem operations (set a variable) #
     return 0
 
+
 # python file class used to store information about each file object #
 class pyfile:
     'Base class for all files stored in the file system'
 
     def __init__(self, path, maxsize, isdir):
         self.path = path
-        self.maxsize = maxsize
         self.isdir = isdir
         self.contents = []
-        self.position = 0
-        self.isdir = False
-        self.isopen = False
-        self.mode = ''
         self.size = 0
+        # If not isdir, than is file, so initialze file variables.
+        if not isdir:
+            self.maxsize = maxsize
+            self.position = 0
+            self.isopen = False
+            self.mode = 'closed'
         # parse out name based on end of path #
 
+    ###########################################################################
+    ### FILE OPERATIONS
+    ###########################################################################
     def open(self, mode):
         self.isopen = True
         if mode == 'r':
@@ -181,18 +202,22 @@ class pyfile:
             print '[INFO] Opened file %s in mode \'%s\'' % (self.path, mode)
         else:
             print 'Invalid file mode'
-            # read handles the 'r' and 'w' cases for read and write and sets variables internally #
+            # read handles the 'r' and 'w' cases for
+            # read and write and sets variables internally
+
 
     def close(self):
         if self.isopen:
             self.isopen = False
-            self.mode   = '' # Resets the mode the file is at
+            self.mode   = 'closed' # Resets the mode the file is at
             print '[INFO] Closed file %s' % self.path
         else:
             print '[INFO] %s already closed' % self.path
 
+
     def length(self):
         return self.size
+
 
     def seek(self, pos):
         if pos < 0:
@@ -235,6 +260,7 @@ class pyfile:
         else:
             print "Error : File is closed or not allowed to write to"
 
+
     def read(self, nbytes):
         #Check if file is open and read mode
         #how to deal with bytes
@@ -258,6 +284,7 @@ class pyfile:
              strList.append(lines)
          return strList
 
+
     def delete(self):
         if self.isdir:
             for key in files:
@@ -268,11 +295,28 @@ class pyfile:
         else:
             del files[self.path]
 
-    def isdir(self):
-        return self.isdir
+
+    ###########################################################################
+    ### DIRECTORY OPERATIONS
+    ###########################################################################
+    def add_file(self, filename):
+        if self.isdir:
+            self.contents.append(filename)
+
+    def in_curr_dir(self, filename):
+        if self.isdir and filename in self.contents:
+            return True
+        else:
+            return False
+
 
     def isdir(self):
         return self.isdir
+
+
+    def isdir(self):
+        return self.isdir
+
 
     #def listdir(self):
     #    # TODO list directorys #
