@@ -1,31 +1,47 @@
 import os
+import pickle 
 
 # Global Variables #
 files = {} # dictionary of all files in file system. --KEY=absolute path, --VALUE=File object
 f = ""
+resume = 1
 
 # Methods to call using the python terminal #
 # Many of these methods are just wrapper calls to the underlying pyfile objects #
 
 def init(fsname):
+    if resume == 0:
+        #process suspended
+        return 0 
     f = fsname
+    dataFileName = '%s.fssave' % f
+    print 'File that will possibly be loaded is named %s' % dataFileName
+    if os.path.isfile(dataFileName):
+        with open(dataFileName, 'rb') as handle:
+            files = pickle.load(handle)
+
     if os.path.isfile(fsname):
         file = open(fsname, 'w')
         file.seek(0)
         file.truncate()
     else:
-        # Just open it
         file = open(fsname, 'w')
-        # Initialize the native file in which storage is done
     print "[INFO] FileSystem with name %s has been created." % f
 
 def create(filename, nbytes):
-    # Call File object create method #
     # TODO handle exceptions for space #
+    if resume == 0:
+         #process suspended
+        return 0
     files[filename] = pyfile(filename, nbytes, False)
     print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
+    return files[filename]
 
 def mkdir(dirname):
+    if resume == 0:
+        #process suspended
+        return 0
+
     directory = pyfile(dirname, 0, True) # initialize a new pyfile object with isdir set to true
     files[dirname] = directory # add the pyfile object to the dictionary global datastructure
     print "[INFO] A new directory with location ~%s, has been created" % dirname
@@ -33,6 +49,9 @@ def mkdir(dirname):
 
 def open(filename, mode):
     # Handle exceptions for file system suspension and whether file exists or not #
+    if resume == 0:
+        #process suspended
+        return 0
     if filename in files:
         files[filename].open(mode)
     elif filename not in files and mode == 'w':
@@ -44,16 +63,33 @@ def open(filename, mode):
     else:
         print 'Error : Reading file which does not exist'
 
-#def close(fd):
-#    # Takes file descriptor, locates file, and calls close method on file object directly #
-#    # TODO #
-#    return 0
+def close(fd):
+    if resume == 0:
+        #process suspended
+        return 0
 
-#def length(fd):
-#    # Call length method on file object itself #
-#    return 0
+    try:
+        files[fd].close()
+    except LookupError:
+        print "Error: File not opened"
+
+
+def length(fd):
+    if resume == 0:
+        #process suspended
+        return 0
+
+    if fd in files:
+        print '[INFO] Size of file %s: %d' % (fd, files[fd].length())
+    else:
+        print 'Error: File not in directory'
+
 
 def pos(fd):
+    if resume == 0:
+    #process suspended
+        return 0
+
     file = files[fd]
     if file != None:
         return file.position
@@ -63,8 +99,10 @@ def pos(fd):
 #    # Call seek method on file object itself #
 #    return 0
 
-""" """
 def read(fd, nbytes):
+    if resume == 0:
+    #process suspended
+        return 0
     if fd in files:
         readString = files[fd].read(nbytes)
         #assuming we have to print out readString
@@ -72,10 +110,13 @@ def read(fd, nbytes):
         print readString
     else:
         print 'File not in Directory. Use error handling later?'
-""" """
 
 def write(fd, writebuf):
+    if resume == 0:
+    #process suspended
+        return 0
     if fd in files:
+        # files[fd].open() NEEDS TO BE OPEN FIRST?
         files[fd].write(writebuf)
     else:
         print "Not in directory. Error handling will go here"
@@ -85,31 +126,75 @@ def write(fd, writebuf):
 #    return 0
 
 def delfile(filename):
+    if resume == 0:
+    #process suspended
+        return 0
     if filename in files: # TODO will also need to check that it is not a directory
-        del files[filename]
+        files[filename].delete()
         return True
     return False
 
-#def deldir(dirname):
-#    # Remove file from dictionary (if it exists), update all keys in dictionary with this directory above them, call delete method on file object itself #
-#    return 0
-#
-#def isdir(filename):
-#    # Call isdir() on file object itself #
-#    return 0
-#
-#def listdir(filename):
-#    # List all directories from the dictionary data structure #
-#    return 0
-#
-#def suspend():
-#    # TODO supspend filesystem operations (set a variable) #
-#    # All file objects in data structure will be serialized and saved to a save file #
-#    return 0
-#
-#def resume():
-#    # TODO resume filesystem operations (set a variable) #
-#    return 0
+def deldir(dirname):
+    if resume == 0:
+    #process suspended
+        return 0
+    # Remove file from dictionary (if it exists), update all keys in dictionary with this directory above them, call delete method on file object itself #
+    return 0
+
+def isdir(filename):
+    if resume == 0:
+    #process suspended
+        return 0
+    if filename in files:
+        return files[filename].isdir
+    else:
+        return "Not in directory. Error handling will go here"
+
+
+# List all directories from the dictionary data structure #
+def listdir(filename):
+    #TODO in the future this will need to only list directories that are nested within the 'filename'
+    if resume == 0:
+    #process suspended
+        return 0
+    for key in files:
+        file = d[key]
+        if file.isdir:
+            print file.path
+
+def suspend():
+    # TODO supspend filesystem operations (set a variable) #
+    # All file objects in data structure will be serialized and saved to a save file #
+    # if resume == 0:
+    # #process suspended
+    #     return 0
+
+    for fd in files:
+        print fd
+        if fd.isopen == True and fd.mode == 'w':
+            print 'Error cannot suspend there is a file open for writing'
+            return 0
+    #setting global variable to 0--should deactivate all other processes
+    resume = 0
+    
+    dataFileName = '%s.fssave' % f
+
+    print 'File that is saving will be named %s' % dataFileName
+    #print 'File full path is %s' % os.path.join(os.getcwd(), dataFileName)
+
+    datafile = open(dataFileName, 'wb')
+    pickle.dump(files, datafile)
+    datafile.close()
+
+    # with open(dataFileName, 'wb') as handle:
+    #   pickle.dump(files, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def resume():
+    resume = 1
+
+    # TODO resume filesystem operations (set a variable) #
+    return 0
 
 # python file class used to store information about each file object #
 class pyfile:
@@ -141,12 +226,15 @@ class pyfile:
       # read handles the 'r' and 'w' cases for read and write and sets variables internally #
 
     def close(self):
-        # TODO #
-        self.isopen = False
-        # Check read/write variable to see if able to close #
+        if self.isopen:
+            self.isopen = False
+            self.mode   = '' # Resets the mode the file is at
+            print '[INFO] Closed file %s' % self.path
+        else:
+            print '[INFO] %s already closed' % self.path
 
     def length(self):
-        return len(self)
+        return self.size
 
     def seek(self, position):
         self.position = position
@@ -159,15 +247,29 @@ class pyfile:
         if self.isopen and self.mode == 'w':
             # Check if there are any new lines in the write buf
             if '\n' in writeBuf:
-                print '[INFO] Printing things with new lines'
                 splitStr = writeBuf.split('\n')
+                splitStr = splitStr[:-1] # Removes last element, which is empty
+
+                # Checks if entire buffer fits. Quite inefficient however,
+                bufsize = 0
                 for line in splitStr:
-                    self.size += len(line) + 1
-                    self.contents.append(line + '\n')
+                    bufsize += len(line) + 1
+
+                if self.size + bufsize < self.maxsize:
+                    print '[INFO] Printing things with new lines'
+                    for line in splitStr:
+                        self.size += len(line) + 1
+                        self.contents.append(line + '\n')
+                else:
+                    print 'Error. Exceeded Write buffer size (on \\n strings)'
             else: # No new line chracter
-                print '[INFO] Writing %s to file %s' % (writeBuf, self.path)
-                self.size += len(writeBuf)
-                self.contents.append(writeBuf)
+                # Check if buffer size is exceeded
+                if self.size + len(writeBuf) < self.maxsize:
+                    print '[INFO] Writing %s to file %s' % (writeBuf, self.path)
+                    self.size += len(writeBuf)
+                    self.contents.append(writeBuf)
+                else:
+                    print 'Error. Exceeded Write buffer size'
         else:
             print "Error : File is closed or not allowed to write to"
 
@@ -190,6 +292,8 @@ class pyfile:
                     #position is affected by read?
                     # self.pos+=i
                 return readString
+        else:
+            print "Error : File is closed or not allowed to write to"
 
 
     def readLines(self):
@@ -199,9 +303,17 @@ class pyfile:
             strList.append(self.contents[i])
          return strList
 
-    #def delete(self):
-    ## delete file (based on directory boolean, it will handle how it deletes the file internally) #
-    #    return 0
+    def delete(self):
+        if self.isdir:
+            for key in files:
+                file = d[key]
+                if file.isdir and file.path in self.path: # TODO this may need to be modified (maybe create an external comparison method)
+                    del files[file.path]
+        else:
+            del files[self.path]
+
+    def isdir(self):
+        return self.isdir
 
     def isdir(self):
         return self.isdir
