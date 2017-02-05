@@ -198,25 +198,27 @@ def deldir(dirname):
         print '--[ERROR] File not in directory'
 
 
+def isdir(filename):
+    if glb.files[glb.curr_dir].in_dir(filename):
+        dict_filepath = generate_filepath(filename)
+        if glb.files[dict_filepath].is_dir():
+            print '%s is a directory' % filename
+        else:
+            print '%s is not a directory' % filename
+    else:
+        print '--[ERROR] File not in directory'
 
+
+def listdir(filename):
+    if glb.files[glb.curr_dir].in_dir(filename):
+        path = generate_filepath(filename)
+        print glb.files[path].contents
+    else:
+        print '--[ERROR] File not in directory'
 
 ###################################################
 # UNIMPLAMENTED CORRECTLY
 ###################################################
-def isdir(filename):
-    # Call isdir() on file object itself #
-    return 0
-
-
-# List all directories from the dictionary data structure #
-def listdir(filename):
-    #TODO in the future this will need to only list directories that are nested within the 'filename'
-    for key in glb.files:
-        file = d[key]
-        if file.isdir:
-            print file.path
-
-
 def suspend():
     pickle.dump(files, open("data.p", "wb"), pickle.HIGHEST_PROTOCOL)
 
@@ -226,9 +228,9 @@ def resume():
     return 0
 
 
-####
+############################################
 # USED FOR CHECKING FILESYSTEM. DELETE LATER
-####
+############################################
 def print_keys():
     for key in glb.files.keys():
         print key
@@ -435,6 +437,3 @@ class pyfile:
 
     def is_empty(self):
         return len(self.contents) == 0
-
-    #def listdir(self):
-    #    # TODO list directorys #

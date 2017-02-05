@@ -72,9 +72,13 @@ def main():
     fs.delfile('not_in_dir')
     print
 
-    print 'Testing delting directory'
-    fs.deldir('a')
-    fs.deldir('b')
+    print 'Testing isdir'
+    fs.isdir('a')
+    fs.isdir('file.txt')
+    print
+
+    print 'Testing listdir'
+    fs.listdir('a')
     print
 
     fs.print_keys()
