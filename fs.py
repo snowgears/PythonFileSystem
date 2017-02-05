@@ -139,30 +139,34 @@ def readlines(fd):
         print '--[ERROR] File not in directory'
 
 
-###################################################
-# UNIMPLAMENTED CORRECTLY
-###################################################
 def length(fd):
-    try:
-        print '[INFO] Size of file %s: %d' % (fd, glb.files[fd].length())
-    except LookupError:
-        print 'Error: File not in directory'
+    if glb.files[glb.curr_dir].in_dir(fd):
+        dict_filepath = generate_filepath(fd)
+        length = glb.files[dict_filepath].length()
+        print 'Length of %s : %d' % (fd, length)
+    else:
+        print '--[ERROR] File not in directory'
 
 
 def pos(fd):
-    try:
-        print '%s position: %d' % (fd, glb.files[fd].position)
-    except LookupError:
-        print 'Error: File not in directory'
+    if glb.files[glb.curr_dir].in_dir(fd):
+        dict_filepath = generate_filepath(fd)
+        pos = glb.files[dict_filepath].pos()
+    else:
+        print '--[ERROR] File not in directory'
 
 
 def seek(fd, pos):
-    if fd in glb.files:
-        glb.files[fs].seek(pos)
+    if glb.files[glb.curr_dir].in_dir(fd):
+        dict_filepath = generate_filepath(fd)
+        glb.files[dict_filepath].seek(pos)
     else:
-        print 'Error : File not in directory'
+        print '--[ERROR] File not in directory'
 
 
+###################################################
+# UNIMPLAMENTED CORRECTLY
+###################################################
 def delfile(filename):
     # Also needs to check if not a directory
     try:
@@ -257,13 +261,17 @@ class pyfile:
 
 
     def seek(self, pos):
-        if pos < 0:
-            print 'Error : Negative position'
-        elif pos > self.maxsize:
-            print 'Error : Exceeded size'
+        if self.isdir:
+            print '[ERROR] Seeking position in a directory'
         else:
-            self.position = pos
-            print '[INFO] Placing position to %d.' % pos
+            if pos < 0:
+                print 'Error : Negative position'
+            elif pos > self.maxsize:
+                print 'Error : Exceeded size'
+            else:
+                self.position = pos
+                print '--[INFO] Placing position to %d in file %s.' % \
+                        (pos, self.path)
 
 
     def write(self, writeBuf):
@@ -361,6 +369,13 @@ class pyfile:
             print '--[ERROR] File is not opened to read'
 
 
+    def pos(self):
+        if self.isdir:
+            print '--[ERROR] Attempting to find position of director'
+        else:
+            return self.position
+
+
     def delete(self):
         if self.isdir:
             for key in files:
@@ -377,6 +392,7 @@ class pyfile:
     ###########################################################################
     def add_file(self, filename):
         if self.isdir and filename not in self.contents:
+            self.size += 1
             self.contents.append(filename)
         else:
             print "Error Making Directory"

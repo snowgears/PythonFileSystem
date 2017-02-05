@@ -42,6 +42,7 @@ def main():
     fs.close('file_in_c')
     fs.open('file_in_c', 'r')
     fs.read('file_in_c', 18)
+    fs.length('file_in_c')
     print
 
     print 'Reading Multiple Lines'
@@ -59,7 +60,10 @@ def main():
     fs.close('not_in_dir')
     fs.open('not_in_dir', 'r')
     fs.read('not_in_dir', 3)
+    fs.pos('not_in_dir')
     fs.read('not_in_dir', 1)
+    fs.seek('not_in_dir', 0)
+    fs.read('not_in_dir', 3)
     fs.close('not_in_dir')
     print
 
