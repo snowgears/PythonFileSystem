@@ -67,10 +67,7 @@ def chdir(dirname):
         return # This does nothing, just here to not trigger else statement
     # Changes to different directory, if in the file hash
     elif glb.files[glb.curr_dir].in_dir(dirname):
-        if glb.curr_dir == '/':
-            glb.curr_dir = glb.curr_dir + dirname
-        else:
-            glb.curr_dir = glb.curr_dir + '/' + dirname
+        glb.curr_dir = generate_filepath(dirname)
     else:
         print 'Error: Directory not found'
 
@@ -164,25 +161,48 @@ def seek(fd, pos):
         print '--[ERROR] File not in directory'
 
 
-###################################################
-# UNIMPLAMENTED CORRECTLY
-###################################################
 def delfile(filename):
-    # Also needs to check if not a directory
-    try:
-        glb.files[filename].delete()
-        return True
-    except:
-        return False
+    if glb.files[glb.curr_dir].in_dir(filename):
+        dict_filepath = generate_filepath(filename)
+        glb.files[glb.curr_dir].del_indir(filename)
+        glb.files.pop(dict_filepath)
+        print '--[INFO] Deleting file %s' % filename
+    else:
+        print '--[ERROR] File not in directory'
 
 
 def deldir(dirname):
-    # Remove file from dictionary (if it exists), update all keys in
-    # dictionary with this directory above them, call delete
-    # method on file object itself #
-    return 0
+    # This is somehow harder to figure out than fs.read()
+    path = generate_filepath(dirname)
+    if path in glb.files:
+        # Couldn't figure out how to manually remove keys from pyfile for
+        # directories without breaking everyfuckingthing
+        if glb.files[path].is_empty():
+            glb.files.pop(path)
+            return
+
+        chdir(dirname)
+        for f in glb.files[glb.curr_dir].contents:
+            path = generate_filepath(f)
+            if glb.files[path].is_dir():
+                # if not directory, recursion to delete every file in directory
+                deldir(f) # Recursion into directory
+                #glb.files.pop(path)
+            else:
+                # if regular file
+                glb.files.pop(path) # Pop regular file in directory
+        chdir('..')
+        path = generate_filepath(dirname)
+        glb.files.pop(path)
+    else:
+        print '--[ERROR] File not in directory'
 
 
+
+
+###################################################
+# UNIMPLAMENTED CORRECTLY
+###################################################
 def isdir(filename):
     # Call isdir() on file object itself #
     return 0
@@ -405,13 +425,16 @@ class pyfile:
             return False
 
 
-    def isdir(self):
+    def del_indir(self, filename):
+        self.contents.remove(filename)
+
+
+    def is_dir(self):
         return self.isdir
 
 
-    def isdir(self):
-        return self.isdir
-
+    def is_empty(self):
+        return len(self.contents) == 0
 
     #def listdir(self):
     #    # TODO list directorys #

@@ -65,6 +65,16 @@ def main():
     fs.seek('not_in_dir', 0)
     fs.read('not_in_dir', 3)
     fs.close('not_in_dir')
+    fs.delfile('not_in_dir')
+    print
+
+    print 'Testing deleting file not in director'
+    fs.delfile('not_in_dir')
+    print
+
+    print 'Testing delting directory'
+    fs.deldir('a')
+    fs.deldir('b')
     print
 
     fs.print_keys()
