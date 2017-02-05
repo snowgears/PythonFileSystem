@@ -83,10 +83,11 @@ def open(filename, mode):
         print '--[INFO] Opened file %s located in directory %s' \
                 % (filename, glb.curr_dir)
     elif not glb.files[glb.curr_dir].in_dir(filename) and str(mode) == 'w':
-        # File id not in directory, but write mode, so creates file
+        # File is not in directory, but write mode, so creates file
         # Don't add into hash until fs.close() is called
         dict_filepath = generate_filepath(filename)
         glb.files[glb.curr_dir].contents.append(filename) # Add to file contents
+        # Add unwritten files to a seperate hash
         glb.unwritten[dict_filepath] = pyfile(filename, 1000, False)
         glb.unwritten[dict_filepath].open('w')
         print '--[INFO] Opening file which is not in directory'
@@ -130,6 +131,14 @@ def read(fd, nbytes):
         print '--[ERROR] Issue reading from file'
 
 
+def readlines(fd):
+    if glb.files[glb.curr_dir].in_dir(fd):
+        dict_filepath = generate_filepath(fd)
+        glb.files[dict_filepath].readlines()
+    else:
+        print '--[ERROR] File not in directory'
+
+
 ###################################################
 # UNIMPLAMENTED CORRECTLY
 ###################################################
@@ -152,17 +161,6 @@ def seek(fd, pos):
         glb.files[fs].seek(pos)
     else:
         print 'Error : File not in directory'
-
-
-def readlines(fd):
-    try:
-        file_contents = glb.files[fd].readLines()
-        # Later, we will put in a way to return a list
-        # but for now, print to screen
-        for lines in file_contents:
-            print '%s' % lines
-    except LookupError:
-        print 'Error: File not in directory'
 
 
 def delfile(filename):
@@ -232,6 +230,7 @@ class pyfile:
             self.mode = 'closed'
         # parse out name based on end of path #
 
+
     ###########################################################################
     ### FILE OPERATIONS
     ###########################################################################
@@ -273,24 +272,23 @@ class pyfile:
             # Check if there are any new lines in the write buf
             if '\n' in writeBuf:
                 splitStr = writeBuf.split('\n')
-                splitStr = splitStr[:-1] # Removes last element, which is empty
 
                 # Checks if entire buffer fits. Quite inefficient however,
                 bufsize = 0
                 for line in splitStr:
-                    bufsize += len(line) + 1
+                    bufsize += len(line) + 1 # EOF is a byte 0xa
 
                 if self.size + bufsize < self.maxsize:
                     print '--[INFO] [WRITTING] Printing Multiple lines to file'
                     for line in splitStr:
                         self.size += len(line) + 1
-                        self.contents.append(line + '\n')
+                        self.contents.append(line)
                 else:
                     print 'Error. Exceeded Write buffer size (on \\n strings)'
             else: # No new line chracter
                 # Check if buffer size is exceeded
                 if self.size + len(writeBuf) < self.maxsize:
-                    self.size += len(writeBuf)
+                    self.size += len(writeBuf) + 1 # +1 for EOF byte
                     self.contents.append(writeBuf)
                     print '--[INFO] [WRITTING] Writing %s to file %s' \
                             % (writeBuf, self.path)
@@ -307,20 +305,60 @@ class pyfile:
             elif nbytes > self.size:
                 print "--[ERROR] Exceeded current file size "
             else:
-                f_str = ''.join(self.contents) # Turn contents into string
-                start = self.position
-                end   = self.position + nbytes
-                self.position = end # Update position after reading
-                print f_str[start : end]
+                if len(self.contents) == 1: # Special case, 1 line
+                    f_str = ''.join(self.contents) # Turn contents into string
+                    start = self.position
+                    end   = self.position + nbytes
+                    self.position = end # Update position after reading
+                    print f_str[start : end]
+                else:
+                    # Fuck my life
+                    idx = 0
+                    seek_bytes = 0
+                    f_str = ''.join(self.contents[idx])
+
+                    # Seek to position
+                    while seek_bytes + len(f_str) + 1 < self.position:
+                        seek_bytes = seek_bytes + len(f_str) + 1
+                        idx += 1
+                        f_str = ''.join(self.contents[idx])
+
+                    # Find exact starting position to read
+                    remain = self.position - seek_bytes
+                    read_bytes = 0
+
+                    # Print out remaing char of line
+                    if len(f_str[remain:]) + 1 >= nbytes:
+                        print f_str[remain: remain + nbytes]
+                        return
+                    else:
+                        read_bytes += len(f_str[remain:]) + 1
+                        idx += 1
+                        print f_str[remain:]
+
+                    # Print all the bytes
+                    while read_bytes < nbytes:
+                        f_str = ''.join(self.contents[idx])
+
+                        if read_bytes + len(f_str) + 1 > nbytes:
+                            print f_str[: nbytes - read_bytes]
+                            break
+                        else:
+                            read_bytes = read_bytes + len(f_str) + 1
+                            idx += 1
+                            print f_str
         else:
             print '--[ERROR] File is not opened to read'
 
 
-    def readLines(self):
-         strList = []
-         for lines in self.contents:
-             strList.append(lines)
-         return strList
+    def readlines(self):
+        if self.isopen and self.mode == 'r':
+            str_list = []
+            for lines in self.contents:
+                line_str = ''.join(lines)
+                print line_str
+        else:
+            print '--[ERROR] File is not opened to read'
 
 
     def delete(self):

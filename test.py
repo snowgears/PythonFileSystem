@@ -41,7 +41,12 @@ def main():
     fs.write('file_in_c', 'Writing\nMultiple\nLines')
     fs.close('file_in_c')
     fs.open('file_in_c', 'r')
-    fs.read('file_in_c', 15)
+    fs.read('file_in_c', 18)
+    print
+
+    print 'Reading Multiple Lines'
+    fs.readlines('file_in_c')
+    fs.close('file_in_c')
     print
 
     # Test opneing file not in directory and read
