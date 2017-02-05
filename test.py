@@ -23,19 +23,42 @@ def main():
     # Print out current tree
     print '\nCurrent Directory Structure'
     fs.print_keys()
-    print '\n'
+    print
 
     # Test open, write, and close
     print 'Testing Writing to /file.txt'
     fs.open('file.txt', 'w')
     fs.write('file.txt', 'Writing some random stuff')
     fs.close('file.txt')
-    print '\n'
+    print
 
-    # Test opneing file not in director
-    print 'Testing opening file not in directory'
+    # Test print multiple lines
+    print 'Changing Directories'
+    fs.chdir('a')
+    fs.chdir('c')
+    print 'Testing writing multiple lines to file'
+    fs.open('file_in_c', 'w')
+    fs.write('file_in_c', 'Writing\nMultiple\nLines')
+    fs.close('file_in_c')
+    fs.open('file_in_c', 'r')
+    fs.read('file_in_c', 15)
+    print
+
+    # Test opneing file not in directory and read
+    print 'Changing back to root'
+    fs.chdir('../')
+    fs.chdir('..')
+    print 'Testing opening file not in directory and reading'
     fs.open('not_in_dir', 'w')
+    fs.write('not_in_dir', 'Things')
+    fs.close('not_in_dir')
+    fs.open('not_in_dir', 'r')
+    fs.read('not_in_dir', 3)
+    fs.read('not_in_dir', 1)
+    fs.close('not_in_dir')
+    print
 
+    fs.print_keys()
 
 if __name__ == '__main__':
     main()

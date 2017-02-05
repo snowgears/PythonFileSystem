@@ -2,9 +2,11 @@ import os
 
 # Globals
 class glb:
-    files = {} # --Key : absolute file path, item : pyfile
-    curr_dir = '/' # Tracking variable for current directory
-    fsname = None
+    fsname    = None
+    curr_dir  = '/' # Tracking variable for current directory
+    files     = {} # --Key : absolute file path, item : pyfile
+    unwritten = {} # Hash for files not in directory, but opened with 'w'
+
 
 ###########################################################################
 ### HELPER FUNCTIONS
@@ -23,6 +25,8 @@ def generate_filepath(filename):
 ### fs module functions
 ###########################################################################
 def init(fsname):
+    """ fs.init(fsname)
+        Initalizes virtual filesystem names fsname"""
     glb.fsname = fsname
     if os.path.isfile(fsname):
         file = open(fsname, 'w')
@@ -46,49 +50,88 @@ def mkdir(dirname):
     dict_dirpath = generate_filepath(dirname) # Name of directory path
     glb.files[glb.curr_dir].add_file(dirname)
     glb.files[dict_dirpath] = pyfile(dirname, 0, True)
-    print "--[INFO] A new directory %s with location %s, has been created" \
+    print "--[INFO] A new directory %s with location %s has been created" \
             % (dirname, glb.curr_dir)
 
 
+def chdir(dirname):
+    # Special case, go back a directory
+    if str(dirname) == '..' or str(dirname) == '../':
+        dir_list = glb.curr_dir.split('/')
+        glb.curr_dir = '/'
+        # Set directory path
+        for dir in dir_list[1:-1]:
+            glb.curr_dir = glb.curr_dir + dir
+    # Special case, go to same directory
+    elif str(dirname) == '.':
+        return # This does nothing, just here to not trigger else statement
+    # Changes to different directory, if in the file hash
+    elif glb.files[glb.curr_dir].in_dir(dirname):
+        if glb.curr_dir == '/':
+            glb.curr_dir = glb.curr_dir + dirname
+        else:
+            glb.curr_dir = glb.curr_dir + '/' + dirname
+    else:
+        print 'Error: Directory not found'
+
+
 def open(filename, mode):
-    if glb.files[glb.curr_dir].in_curr_dir(filename):
+    if glb.files[glb.curr_dir].in_dir(filename):
+        # File is in directory
         dict_filepath = generate_filepath(filename)
         glb.files[dict_filepath].open(mode)
         print '--[INFO] Opened file %s located in directory %s' \
                 % (filename, glb.curr_dir)
+    elif not glb.files[glb.curr_dir].in_dir(filename) and str(mode) == 'w':
+        # File id not in directory, but write mode, so creates file
+        # Don't add into hash until fs.close() is called
+        dict_filepath = generate_filepath(filename)
+        glb.files[glb.curr_dir].contents.append(filename) # Add to file contents
+        glb.unwritten[dict_filepath] = pyfile(filename, 1000, False)
+        glb.unwritten[dict_filepath].open('w')
+        print '--[INFO] Opening file which is not in directory'
+        return
     else:
         print '--[ERROR] File not in directory'
 
-    #elif filename not in glb.files and mode == 'w':
-    #    # If not, create file in filesystem
-    #    # Write will handle adding file to hash
-    #    new_file = pyfile(filename, 0, False)
-    #    new_file.open('w')
-    #    print '[INFO] Opening file which is not in directory'
-    #else:
-    #    # Exceptions go here
-    #    print 'Error : something went wrong in open()'
-
 
 def write(fd, writebuf):
-    if glb.files[glb.curr_dir].in_curr_dir(fd):
+    if glb.files[glb.curr_dir].in_dir(fd):
         dict_filepath = generate_filepath(fd)
-        glb.files[dict_filepath].write(writebuf)
-        print '--[INFO] Written to file %s' % fd
-    #try:
-    #    #fd = glb.curr_dir + fd
-    #    glb.files[fd].write(writebuf)
-    #except LookupError:
-    #    print 'Error: File not in directory'
+        if dict_filepath in glb.files:
+            glb.files[dict_filepath].write(writebuf)
+            print '--[INFO] Written to file %s (file exists in filesystem)' % fd
+        else:
+            glb.unwritten[dict_filepath].write(writebuf)
+            print '--[INFO] Written to file %s (file not in filesystem)' % fd
+    else:
+        print '--[ERROR] File not in directory'
 
 
 def close(fd):
-    if glb.files[glb.curr_dir].in_curr_dir(fd):
+    if glb.files[glb.curr_dir].in_dir(fd):
         dict_filepath = generate_filepath(fd)
-        glb.files[dict_filepath].close()
-        print '--[INFO] Closed file %s located in director %s' \
-                % (fd, glb.curr_dir)
+        if dict_filepath in glb.files:
+            glb.files[dict_filepath].close()
+            print '--[INFO] Closed file %s located in director %s' \
+                    % (fd, glb.curr_dir)
+        else: # Unwritten file
+            glb.files[dict_filepath] = glb.unwritten[dict_filepath]
+            glb.unwritten.pop(dict_filepath)
+    else:
+        print '--[ERROR] File not in directory'
 
+
+def read(fd, nbytes):
+    if glb.files[glb.curr_dir].in_dir(fd):
+        dict_filepath = generate_filepath(fd)
+        glb.files[dict_filepath].read(nbytes)
+    else:
+        print '--[ERROR] Issue reading from file'
+
+
+###################################################
+# UNIMPLAMENTED CORRECTLY
 ###################################################
 def length(fd):
     try:
@@ -111,15 +154,6 @@ def seek(fd, pos):
         print 'Error : File not in directory'
 
 
-def read(fd, nbytes):
-    try:
-        readString = glb.files[fd].read(nbytes)
-        #assuming we have to print out readString
-        print readString
-    except LookupError:
-        print 'Error: File not in directory'
-
-
 def readlines(fd):
     try:
         file_contents = glb.files[fd].readLines()
@@ -138,27 +172,6 @@ def delfile(filename):
         return True
     except:
         return False
-
-
-def chdir(dirname):
-    # Special case, go back a directory
-    if str(dirname) == '..' or str(dirname) == '../':
-        dir_list = glb.curr_dir.split('/')
-        glb.curr_dir = '/'
-        # Set directory path
-        for dir in dir_list[1:-1]:
-            glb.curr_dir = glb.curr_dir + dir
-    # Special case, go to same directory
-    elif str(dirname) == '.':
-        return # This does nothing, just here to not trigger else statement
-    # Changes to different directory, if in the file hash
-    elif glb.files[glb.curr_dir].in_curr_dir(dirname):
-        if glb.curr_dir == '/':
-            glb.curr_dir = glb.curr_dir + dirname
-        else:
-            glb.curr_dir = glb.curr_dir + '/' + dirname
-    else:
-        print 'Error: Directory not found'
 
 
 def deldir(dirname):
@@ -191,14 +204,18 @@ def resume():
     return 0
 
 
-###################
+####
+# USED FOR CHECKING FILESYSTEM. DELETE LATER
+####
 def print_keys():
     for key in glb.files.keys():
         print key
 
 
 
-# python file class used to store information about each file object #
+###########################################################################
+### PYFILE class
+###########################################################################
 class pyfile:
     'Base class for all files stored in the file system'
 
@@ -234,9 +251,6 @@ class pyfile:
         if self.isopen:
             self.isopen = False
             self.mode   = 'closed' # Resets the mode the file is at
-            print '--[INFO] Closed file %s' % self.path
-        else:
-            print '--[ERROR] %s already closed' % self.path
 
 
     def length(self):
@@ -267,7 +281,7 @@ class pyfile:
                     bufsize += len(line) + 1
 
                 if self.size + bufsize < self.maxsize:
-                    print '--[INFO] Printing things with new lines'
+                    print '--[INFO] [WRITTING] Printing Multiple lines to file'
                     for line in splitStr:
                         self.size += len(line) + 1
                         self.contents.append(line + '\n')
@@ -276,31 +290,30 @@ class pyfile:
             else: # No new line chracter
                 # Check if buffer size is exceeded
                 if self.size + len(writeBuf) < self.maxsize:
-                    print '--[INFO] Writing %s to file %s' \
-                            % (writeBuf, self.path)
                     self.size += len(writeBuf)
                     self.contents.append(writeBuf)
+                    print '--[INFO] [WRITTING] Writing %s to file %s' \
+                            % (writeBuf, self.path)
                 else:
-                    print '--[ERROR] Exceeded Write buffer size'
+                    print '--[ERROR] [WRITTING] Exceeded Write buffer size'
         else:
-            print "--[ERROR] File is closed or not allowed to write to"
+            print "--[ERROR] [WRITTING] File is closed or not allowed to write to"
 
 
     def read(self, nbytes):
-        #Check if file is open and read mode
-        #how to deal with bytes
-        readString = ' '
         if self.isopen and self.mode == 'r':
             if nbytes > self.maxsize:
-                print "Error: Exceeded file size "
-            if nbytes > self.size:
-                print "Error: Exceeded current file size "
+                print "--[ERROR] Exceeded file size "
+            elif nbytes > self.size:
+                print "--[ERROR] Exceeded current file size "
             else:
-                for i in range(nbytes):
-                    readString+=str(self.contents[i])
-                    #position is affected by read?
-                    # self.pos+=i
-                return readString
+                f_str = ''.join(self.contents) # Turn contents into string
+                start = self.position
+                end   = self.position + nbytes
+                self.position = end # Update position after reading
+                print f_str[start : end]
+        else:
+            print '--[ERROR] File is not opened to read'
 
 
     def readLines(self):
@@ -331,7 +344,7 @@ class pyfile:
             print "Error Making Directory"
 
 
-    def in_curr_dir(self, filename):
+    def in_dir(self, filename):
         if self.isdir and filename in self.contents:
             return True
         else:
