@@ -3,50 +3,26 @@
 import fs
 
 def main():
-    fs.init('abc')
+    fs.init('myfs')
 
-    # Test file creation and track files
-    fs.create('file1.txt', 100)
-    fs.create('tmp.dat', 3)
-    fs.create('other.c', 2)
-    fs.create('d', 10)
-    fs.create('ex', 10)
+    # Create a basic directory tree
+    print '\nCreating filesystem for testing'
+    fs.mkdir('a')
+    fs.mkdir('b')
+    fs.create('file.txt', 100)
+    fs.chdir('a')
+    fs.mkdir('c')
+    fs.chdir('c')
+    fs.create('file_in_c', 1000)
+    fs.chdir('../')
+    fs.chdir('..')
+    fs.chdir('b')
+    fs.create('file_in_b', 2)
 
-    print '\nCurrent filesystem: %s'
-    for files in fs.glb.files.keys():
-        print "File : %s" % files
-
-    # Test Opening files
-    print '\nTesting opening files'
-    fs.open('file1.txt', 'w')
-    fs.open('tmp.dat', 'r')
-    fs.open('tmp.dat', 'w')
-    fs.open('other.c', 'w')
-    fs.open('d', 'adsf')
-
-    # Test writing to file
-    print '\nTesting writing to files'
-    fs.write('file1.txt', 'Something goes in here.') # Should write
-    fs.write('tmp.dat', 'a\nb\nc\n') # Shouldn't write
-    fs.write('tmp.dat', 'a\n') # Should write
-    fs.write('other.c', 'THIS_IS_MORE_THAN_2_BYTES') # shouldn't write
-    fs.write('d', 'fasd') # Should'nt write
-
-    # Test close file
-    print '\nTesting closing files'
-    fs.close('file1.txt')
-    fs.write('file1.txt', 'Something goes in here.')
-    fs.close('asdf')
-    fs.close('ex')
-
-    # Test length of file
-    print '\nTesting length of file'
-    fs.length('tmp.dat')
-
-    # Test reading entire file
-    print '\nTesting readlines()'
-    fs.readlines('file1.txt')
-    fs.readlines('tmp.dat')
+    # Print out current tree
+    print '\nCurrent Directory Structure'
+    fs.print_keys()
+    print '\n'
 
 if __name__ == '__main__':
     main()

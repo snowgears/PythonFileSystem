@@ -1,8 +1,9 @@
 import os
 
+# Globals
 class glb:
-    files = {}
-    curr_dir = '/'
+    files = {} # --Key : absolute file path, item : pyfile
+    curr_dir = '/' # Tracking variable for current directory
     fsname = None
 
 
@@ -15,7 +16,7 @@ def init(fsname):
         file.close()
     # Initalize a root directory
     glb.files['/'] = pyfile('/', 0, True)
-    print "[INFO] FileSystem with name %s has been created." % fsname
+    print "--[INFO] FileSystem with name %s has been created." % fsname
 
 
 def create(filename, nbytes):
@@ -25,7 +26,7 @@ def create(filename, nbytes):
         dict_filename = glb.curr_dir + '/' + filename
     glb.files[glb.curr_dir].add_file(filename)
     glb.files[dict_filename] = pyfile(filename, nbytes, False)
-    print '[INFO] Created file %s with %d bytes.' % (filename, nbytes)
+    print '--[INFO] Created file %s with %d bytes created in %s.' % (filename, nbytes, glb.curr_dir)
 
 
 def mkdir(dirname):
@@ -35,8 +36,7 @@ def mkdir(dirname):
         dict_dirname = glb.curr_dir + '/' + dirname
     glb.files[glb.curr_dir].add_file(dirname)
     glb.files[dict_dirname] = pyfile(dirname, 0, True)
-    print "[INFO] A new directory with location %s, has been created" % dirname
-
+    print "--[INFO] A new directory %s with location %s, has been created" % (dirname, glb.curr_dir)
 
 def open(filename, mode):
     if filename in glb.files:
@@ -168,6 +168,13 @@ def suspend():
 def resume():
     # TODO resume filesystem operations (set a variable) #
     return 0
+
+
+###################
+def print_keys():
+    for key in glb.files.keys():
+        print key
+
 
 
 # python file class used to store information about each file object #
