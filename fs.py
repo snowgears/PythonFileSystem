@@ -39,62 +39,69 @@ def init(fsname):
 
 
 def create(filename, nbytes):
-    dict_filepath = generate_filepath(filename) # Name of filepath
-    glb.files[glb.curr_dir].add_file(filename)
-    glb.files[dict_filepath] = pyfile(filename, nbytes, False)
-    print '--[INFO] Created file %s with %d bytes created in %s.' \
-            % (filename, nbytes, glb.curr_dir)
+    try:
+        dict_filepath = generate_filepath(filename) # Name of filepath
+        glb.files[glb.curr_dir].add_file(filename)
+        glb.files[dict_filepath] = pyfile(filename, nbytes, False)
+        print '--[INFO] Created file %s with %d bytes created in %s.' \
+                % (filename, nbytes, glb.curr_dir)
+    except:
+        print '[ERROR] File note created, failure to allocate space'
 
 
 def mkdir(dirname):
-    dict_dirpath = generate_filepath(dirname) # Name of directory path
-    glb.files[glb.curr_dir].add_file(dirname)
-    glb.files[dict_dirpath] = pyfile(dirname, 0, True)
-    print "--[INFO] A new directory %s with location %s has been created" \
-            % (dirname, glb.curr_dir)
+    try:
+        dict_dirpath = generate_filepath(dirname) # Name of directory path
+        glb.files[glb.curr_dir].add_file(dirname)
+        glb.files[dict_dirpath] = pyfile(dirname, 0, True)
+        print "--[INFO] A new directory %s with location %s has been created" \
+                % (dirname, glb.curr_dir)
+    except:
+        print '[ERROR] Failed to make directory'
 
 
 def chdir(dirname):
-    # Special case, go back a directory
-    if str(dirname) == '..' or str(dirname) == '../':
-        dir_list = glb.curr_dir.split('/')
-        glb.curr_dir = '/'
-        # Set directory path
-        for dir in dir_list[1:-1]:
-            glb.curr_dir = glb.curr_dir + dir
-    # Special case, go to same directory
-    elif str(dirname) == '.':
-        return # This does nothing, just here to not trigger else statement
-    # Changes to different directory, if in the file hash
-    elif glb.files[glb.curr_dir].in_dir(dirname):
-        glb.curr_dir = generate_filepath(dirname)
-    else:
+    try:
+        if str(dirname) == '..' or str(dirname) == '../':
+            dir_list = glb.curr_dir.split('/')
+            glb.curr_dir = '/'
+            # Set directory path
+            for dir in dir_list[1:-1]:
+                glb.curr_dir = glb.curr_dir + dir
+        # Special case, go to same directory
+        elif str(dirname) == '.':
+            return # This does nothing, just here to not trigger else statement
+        # Changes to different directory, if in the file hash
+        elif glb.files[glb.curr_dir].in_dir(dirname):
+            glb.curr_dir = generate_filepath(dirname)
+    except:
         print 'Error: Directory not found'
 
 
 def open(filename, mode):
-    if glb.files[glb.curr_dir].in_dir(filename):
-        # File is in directory
-        dict_filepath = generate_filepath(filename)
-        glb.files[dict_filepath].open(mode)
-        print '--[INFO] Opened file %s located in directory %s' \
-                % (filename, glb.curr_dir)
-    elif not glb.files[glb.curr_dir].in_dir(filename) and str(mode) == 'w':
-        # File is not in directory, but write mode, so creates file
-        # Don't add into hash until fs.close() is called
-        dict_filepath = generate_filepath(filename)
-        glb.files[glb.curr_dir].contents.append(filename) # Add to file contents
-        # Add unwritten files to a seperate hash
-        glb.unwritten[dict_filepath] = pyfile(filename, 1000, False)
-        glb.unwritten[dict_filepath].open('w')
-        print '--[INFO] Opening file which is not in directory'
-        return
-    else:
+    try:
+        if glb.files[glb.curr_dir].in_dir(filename):
+            # File is in directory
+            dict_filepath = generate_filepath(filename)
+            glb.files[dict_filepath].open(mode)
+            print '--[INFO] Opened file %s located in directory %s' \
+                    % (filename, glb.curr_dir)
+        elif not glb.files[glb.curr_dir].in_dir(filename) and str(mode) == 'w':
+            # File is not in directory, but write mode, so creates file
+            # Don't add into hash until fs.close() is called
+            dict_filepath = generate_filepath(filename)
+            glb.files[glb.curr_dir].contents.append(filename) # Add to file contents
+            # Add unwritten files to a seperate hash
+            glb.unwritten[dict_filepath] = pyfile(filename, 1000, False)
+            glb.unwritten[dict_filepath].open('w')
+            print '--[INFO] Opening file which is not in directory'
+            return
+    except:
         print '--[ERROR] File not in directory'
 
 
 def write(fd, writebuf):
-    if glb.files[glb.curr_dir].in_dir(fd):
+    try:
         dict_filepath = generate_filepath(fd)
         if dict_filepath in glb.files:
             glb.files[dict_filepath].write(writebuf)
@@ -102,12 +109,12 @@ def write(fd, writebuf):
         else:
             glb.unwritten[dict_filepath].write(writebuf)
             print '--[INFO] Written to file %s (file not in filesystem)' % fd
-    else:
+    except:
         print '--[ERROR] File not in directory'
 
 
 def close(fd):
-    if glb.files[glb.curr_dir].in_dir(fd):
+    try:
         dict_filepath = generate_filepath(fd)
         if dict_filepath in glb.files:
             glb.files[dict_filepath].close()
@@ -116,104 +123,124 @@ def close(fd):
         else: # Unwritten file
             glb.files[dict_filepath] = glb.unwritten[dict_filepath]
             glb.unwritten.pop(dict_filepath)
-    else:
+    except:
         print '--[ERROR] File not in directory'
 
 
 def read(fd, nbytes):
-    if glb.files[glb.curr_dir].in_dir(fd):
+    try:
         dict_filepath = generate_filepath(fd)
         glb.files[dict_filepath].read(nbytes)
-    else:
+    except:
         print '--[ERROR] Issue reading from file'
 
 
 def readlines(fd):
-    if glb.files[glb.curr_dir].in_dir(fd):
+    try:
         dict_filepath = generate_filepath(fd)
         glb.files[dict_filepath].readlines()
-    else:
+    except:
         print '--[ERROR] File not in directory'
 
 
 def length(fd):
-    if glb.files[glb.curr_dir].in_dir(fd):
+    try:
         dict_filepath = generate_filepath(fd)
         length = glb.files[dict_filepath].length()
         print 'Length of %s : %d' % (fd, length)
-    else:
+    except:
         print '--[ERROR] File not in directory'
 
 
 def pos(fd):
-    if glb.files[glb.curr_dir].in_dir(fd):
+    try:
         dict_filepath = generate_filepath(fd)
         pos = glb.files[dict_filepath].pos()
-    else:
+    except:
         print '--[ERROR] File not in directory'
 
 
 def seek(fd, pos):
-    if glb.files[glb.curr_dir].in_dir(fd):
+    try:
         dict_filepath = generate_filepath(fd)
         glb.files[dict_filepath].seek(pos)
-    else:
+    except:
         print '--[ERROR] File not in directory'
 
 
 def delfile(filename):
-    if glb.files[glb.curr_dir].in_dir(filename):
+    try:
         dict_filepath = generate_filepath(filename)
         glb.files[glb.curr_dir].del_indir(filename)
         glb.files.pop(dict_filepath)
         print '--[INFO] Deleting file %s' % filename
-    else:
+    except:
         print '--[ERROR] File not in directory'
 
 
 def deldir(dirname):
-    # This is somehow harder to figure out than fs.read()
-    path = generate_filepath(dirname)
-    if path in glb.files:
-        # Couldn't figure out how to manually remove keys from pyfile for
-        # directories without breaking everyfuckingthing
-        if glb.files[path].is_empty():
-            glb.files.pop(path)
-            return
-
-        chdir(dirname)
-        for f in glb.files[glb.curr_dir].contents:
-            path = generate_filepath(f)
-            if glb.files[path].is_dir():
-                # if not directory, recursion to delete every file in directory
-                deldir(f) # Recursion into directory
-                #glb.files.pop(path)
-            else:
-                # if regular file
-                glb.files.pop(path) # Pop regular file in directory
-        chdir('..')
+    try:
         path = generate_filepath(dirname)
-        glb.files.pop(path)
-    else:
+        if path in glb.files:
+            # Couldn't figure out how to manually remove keys from pyfile for
+            # directories without breaking everyfuckingthing
+            if glb.files[path].is_empty():
+                glb.files.pop(path)
+                return
+
+            chdir(dirname)
+            for f in glb.files[glb.curr_dir].contents:
+                path = generate_filepath(f)
+                if glb.files[path].is_dir():
+                    # if not directory, recursion to delete every file in directory
+                    deldir(f) # Recursion into directory
+                else:
+                    # if regular file
+                    glb.files.pop(path) # Pop regular file in directory
+            chdir('..')
+            path = generate_filepath(dirname)
+            glb.files.pop(path)
+    except:
         print '--[ERROR] File not in directory'
 
 
 def isdir(filename):
-    if glb.files[glb.curr_dir].in_dir(filename):
-        dict_filepath = generate_filepath(filename)
-        if glb.files[dict_filepath].is_dir():
+    try:
+        if str(filename) == '.' or str(filename) == './':
+            print '%s is a directory' % filename
+        elif str(filename) == '..' or str(filename) == '../':
             print '%s is a directory' % filename
         else:
-            print '%s is not a directory' % filename
-    else:
+            dict_filepath = generate_filepath(filename)
+            if glb.files[dict_filepath].is_dir():
+                print '%s is a directory' % filename
+            else:
+                print '%s is not a directory' % filename
+    except:
         print '--[ERROR] File not in directory'
 
 
 def listdir(filename):
-    if glb.files[glb.curr_dir].in_dir(filename):
+    try:
+        if str(filename) == '.' or str(filename) == './':
+            for f in glb.files[glb.curr_dir].contents:
+                inner_path = generate_filepath(f)
+                # Remove files in pyfile.contents if its not in key
+                # This is a sideeffect of getting fs.deldir() working
+                if inner_path not in glb.files:
+                    glb.files[glb.curr_dir].contents.remove(f)
+            print glb.files[glb.curr_dir].contents
+            return
+
         path = generate_filepath(filename)
+        chdir(filename)
+        for f in glb.files[path].contents:
+            inner_path = generate_filepath(f)
+            if inner_path not in glb.files:
+                glb.files[path].contents.remove(f)
         print glb.files[path].contents
-    else:
+        chdir('..')
+    except:
         print '--[ERROR] File not in directory'
 
 ###################################################

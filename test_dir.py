@@ -23,21 +23,29 @@ def main():
     fs.print_keys()
     print
 
+    print 'Testing listdir with a directory in directory'
+    fs.listdir('b')
+
     print 'After Deleting /b'
     fs.deldir('b')
+    fs.listdir('.')
     fs.print_keys()
     print
 
 
     print 'After Deleting /c'
     fs.deldir('c')
+    fs.listdir('.')
     fs.print_keys()
     print
 
     print 'After Deleting /a'
     fs.deldir('a')
+    fs.listdir('.')
     fs.print_keys()
     print
+
+    fs.listdir('.')
 
 if __name__ == '__main__':
     main()
