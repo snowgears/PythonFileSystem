@@ -354,12 +354,12 @@ def suspend():
     fo.close()
    
 
-def resume():
+def resume(filename):
 
-    print '--[INFO] Resuming filesystem'
+    print '--[INFO] Resuming filesystem '+filename
     glb.resume = 1
-    dataFileName = '%s.fssave' % glb.fsname
-    fo = io.FileIO(dataFileName, "rb")
+    #dataFileName = '%s.fssave' % glb.fsname
+    fo = io.FileIO(filename, "rb")
     #load saved file into files
     glb.files = pickle.load(fo)
 
