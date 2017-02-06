@@ -232,6 +232,9 @@ class pyfile:
                     #position is affected by read?
                     # self.pos+=i
                 return readString
+        else:
+            print "Error : File is closed or not allowed to write to"
+
 
 
     def readLines(self):
