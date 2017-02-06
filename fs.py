@@ -1,4 +1,7 @@
+#!/usr/bin/env python
 import os
+
+import io
 import pickle 
 
 # Globals
@@ -7,6 +10,8 @@ class glb:
     curr_dir  = '/' # Tracking variable for current directory
     files     = {} # --Key : absolute file path, item : pyfile
     unwritten = {} # Hash for files not in directory, but opened with 'w'
+    resume = 1 #variable used to keep track of process in resume/suspend
+
 
 
 ###########################################################################
@@ -20,6 +25,10 @@ def generate_filepath(filename):
     else:
         dict_filename = glb.curr_dir + '/' + filename
     return dict_filename
+
+def check_status():
+    if glb.resume == 0:
+        raise ValueError( "Process suspended cannot execute" )
 
 
 ###########################################################################
@@ -46,28 +55,41 @@ def init(fsname):
 
 def create(filename, nbytes):
     try:
+
+        check_status()
         dict_filepath = generate_filepath(filename) # Name of filepath
         glb.files[glb.curr_dir].add_file(filename)
         glb.files[dict_filepath] = pyfile(filename, nbytes, False)
         print '--[INFO] Created file %s with %d bytes created in %s.' \
                 % (filename, nbytes, glb.curr_dir)
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
     except:
         print '[ERROR] File note created, failure to allocate space'
 
 
 def mkdir(dirname):
     try:
+        check_status()
         dict_dirpath = generate_filepath(dirname) # Name of directory path
         glb.files[glb.curr_dir].add_file(dirname)
         glb.files[dict_dirpath] = pyfile(dirname, 0, True)
         print "--[INFO] A new directory %s with location %s has been created" \
                 % (dirname, glb.curr_dir)
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
     except:
         print '[ERROR] Failed to make directory'
 
 
+
 def chdir(dirname):
     try:
+
+
+def chdir(dirname):
+    try:
+        check_status()
         if str(dirname) == '..' or str(dirname) == '../':
             dir_list = glb.curr_dir.split('/')
             glb.curr_dir = '/'
@@ -86,6 +108,17 @@ def chdir(dirname):
 
 def open(filename, mode):
     try:
+
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
+    except:
+        print 'Error: Directory not found'
+
+
+
+def open(filename, mode):
+    try:
+        check_status()
         if glb.files[glb.curr_dir].in_dir(filename):
             # File is in directory
             dict_filepath = generate_filepath(filename)
@@ -102,12 +135,22 @@ def open(filename, mode):
             glb.unwritten[dict_filepath].open('w')
             print '--[INFO] Opening file which is not in directory'
             return
+
     except:
         print '--[ERROR] File not in directory'
+
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
+    except:
+        print '--[ERROR] File not in directory'
+ 
+
 
 
 def write(fd, writebuf):
     try:
+
+        check_status()
         dict_filepath = generate_filepath(fd)
         if dict_filepath in glb.files:
             glb.files[dict_filepath].write(writebuf)
@@ -115,8 +158,32 @@ def write(fd, writebuf):
         else:
             glb.unwritten[dict_filepath].write(writebuf)
             print '--[INFO] Written to file %s (file not in filesystem)' % fd
+
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
     except:
         print '--[ERROR] File not in directory'
+
+
+
+def close(fd):
+    try:
+        check_status()
+        dict_filepath = generate_filepath(fd)
+        if dict_filepath in glb.files:
+            glb.files[dict_filepath].close()
+            print '--[INFO] Closed file %s located in director %s' \
+                    % (fd, glb.curr_dir)
+        else: # Unwritten file
+            glb.files[dict_filepath] = glb.unwritten[dict_filepath]
+            glb.unwritten.pop(dict_filepath)
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
+
+
+    except:
+        print '--[ERROR] File not in directory'
+
 
 
 def close(fd):
@@ -133,10 +200,20 @@ def close(fd):
         print '--[ERROR] File not in directory'
 
 
+
 def read(fd, nbytes):
     try:
+
         dict_filepath = generate_filepath(fd)
         glb.files[dict_filepath].read(nbytes)
+
+        check_status()
+        dict_filepath = generate_filepath(fd)
+        glb.files[dict_filepath].read(nbytes)
+
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
+
     except:
         print '--[ERROR] Issue reading from file'
 
@@ -145,6 +222,17 @@ def readlines(fd):
     try:
         dict_filepath = generate_filepath(fd)
         glb.files[dict_filepath].readlines()
+
+
+def readlines(fd):
+    try:
+        check_status()
+        dict_filepath = generate_filepath(fd)
+        glb.files[dict_filepath].readlines()
+    
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
+
     except:
         print '--[ERROR] File not in directory'
 
@@ -154,8 +242,45 @@ def length(fd):
         dict_filepath = generate_filepath(fd)
         length = glb.files[dict_filepath].length()
         print 'Length of %s : %d' % (fd, length)
+
+def length(fd):
+    try:
+        check_status()
+        dict_filepath = generate_filepath(fd)
+        length = glb.files[dict_filepath].length()
+        print 'Length of %s : %d' % (fd, length)
+
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
     except:
         print '--[ERROR] File not in directory'
+
+
+
+def pos(fd):
+    try:
+        check_status()
+        dict_filepath = generate_filepath(fd)
+        pos = glb.files[dict_filepath].pos()
+
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
+    except:
+        print '--[ERROR] File not in directory'
+
+
+
+def seek(fd, pos):
+    try:
+        check_status()
+        dict_filepath = generate_filepath(fd)
+        glb.files[dict_filepath].seek(pos)
+
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
+    except:
+        print '--[ERROR] File not in directory'
+
 
 
 def pos(fd):
@@ -174,18 +299,28 @@ def seek(fd, pos):
         print '--[ERROR] File not in directory'
 
 
+
+
 def delfile(filename):
     try:
+        check_status()
         dict_filepath = generate_filepath(filename)
         glb.files[glb.curr_dir].del_indir(filename)
         glb.files.pop(dict_filepath)
         print '--[INFO] Deleting file %s' % filename
+
+    except:
+        print '--[ERROR] File not in directory'
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
     except:
         print '--[ERROR] File not in directory'
 
 
+
 def deldir(dirname):
     try:
+        check_status()
         path = generate_filepath(dirname)
         if path in glb.files:
             # Couldn't figure out how to manually remove keys from pyfile for
@@ -206,12 +341,18 @@ def deldir(dirname):
             chdir('..')
             path = generate_filepath(dirname)
             glb.files.pop(path)
+
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
     except:
         print '--[ERROR] File not in directory'
 
 
+
+
 def isdir(filename):
     try:
+        check_status()
         if str(filename) == '.' or str(filename) == './':
             print '%s is a directory' % filename
         elif str(filename) == '..' or str(filename) == '../':
@@ -222,12 +363,15 @@ def isdir(filename):
                 print '%s is a directory' % filename
             else:
                 print '%s is not a directory' % filename
+
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
     except:
         print '--[ERROR] File not in directory'
 
-
 def listdir(filename):
     try:
+        check_status()
         if str(filename) == '.' or str(filename) == './':
             for f in glb.files[glb.curr_dir].contents:
                 inner_path = generate_filepath(f)
@@ -249,32 +393,46 @@ def listdir(filename):
     except:
         print '--[ERROR] File not in directory'
 
-###################################################
-# UNIMPLAMENTED CORRECTLY
-###################################################
+
+
+
 def suspend():
-    # TODO supspend filesystem operations (set a variable) #
-    # All file objects in data structure will be serialized and saved to a save file #
+    # check to see if any file is open for writing---can't suspend
+    for fd in glb.files:
+        # print fd
+        if glb.files[fd].isdir == False:
+            if glb.files[fd].isopen == True and glb.files[fd].mode == 'w':
+                print '--[ERROR] cannot suspend there is a file open for writing'
+                return 0
+
+
+    print '--[INFO] Suspending filesystem'
+    glb.resume = 0 # suspending all process
     
     dataFileName = '%s.fssave' % glb.fsname
+    
 
     print 'File that is saving will be named %s' % dataFileName
-    #print 'File full path is %s' % os.path.join(os.getcwd(), dataFileName)
 
-    datafile = open(dataFileName, 'wb')
-    pickle.dump(glb.files, datafile)
-    datafile.close()
+    #create File I/O object
+    fo = io.FileIO(dataFileName, "wb")
 
-    # with open(dataFileName, 'wb') as handle:
-    # 	pickle.dump(files, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    
-    # ERIC ATTEMPT AT PICKLE
-    #pickle.dump(files, open("data.p", "wb"), pickle.HIGHEST_PROTOCOL)
-    return 0
 
-def resume():
-    # TODO resume filesystem operations (set a variable) #
-    return 0
+    pickle.dump(glb.files, fo, protocol=pickle.HIGHEST_PROTOCOL)
+  
+    fo.close()
+   
+
+def resume(filename):
+
+    print '--[INFO] Resuming filesystem '+filename
+    glb.resume = 1
+    #dataFileName = '%s.fssave' % glb.fsname
+    fo = io.FileIO(filename, "rb")
+    #load saved file into files
+    glb.files = pickle.load(fo)
+    return
+  
 
 
 ############################################
@@ -439,7 +597,80 @@ class pyfile:
         else:
             print '--[ERROR] File is not opened to read'
 
+                if len(self.contents) == 1: # Special case, 1 line
+                    f_str = ''.join(self.contents) # Turn contents into string
+                    start = self.position
+                    end   = self.position + nbytes
+                    self.position = end # Update position after reading
+                    print f_str[start : end]
+                else:
+                    # Fuck my life
+                    idx = 0
+                    seek_bytes = 0
+                    f_str = ''.join(self.contents[idx])
 
+                    # Seek to position
+                    while seek_bytes + len(f_str) + 1 < self.position:
+                        seek_bytes = seek_bytes + len(f_str) + 1
+                        idx += 1
+                        f_str = ''.join(self.contents[idx])
+
+                    # Find exact starting position to read
+                    remain = self.position - seek_bytes
+                    read_bytes = 0
+
+                    # Print out remaing char of line
+                    if len(f_str[remain:]) + 1 >= nbytes:
+                        print f_str[remain: remain + nbytes]
+                        return
+                    else:
+                        read_bytes += len(f_str[remain:]) + 1
+                        idx += 1
+                        print f_str[remain:]
+
+                    # Print all the bytes
+                    while read_bytes < nbytes:
+                        f_str = ''.join(self.contents[idx])
+
+                        if read_bytes + len(f_str) + 1 > nbytes:
+                            print f_str[: nbytes - read_bytes]
+                            break
+                        else:
+                            read_bytes = read_bytes + len(f_str) + 1
+                            idx += 1
+                            print f_str
+        else:
+            print '--[ERROR] File is not opened to read'
+
+    def readlines(self):
+        if self.isopen and self.mode == 'r':
+            str_list = []
+            for lines in self.contents:
+                line_str = ''.join(lines)
+                print line_str
+        else:
+            print '--[ERROR] File is not opened to read'
+
+
+    def pos(self):
+        if self.isdir:
+            print '--[ERROR] Attempting to find position of director'
+        else:
+            return self.position
+
+
+    ###########################################################################
+    ### DIRECTORY OPERATIONS
+    ###########################################################################
+    def add_file(self, filename):
+        if self.isdir and filename not in self.contents:
+            self.size += 1
+            self.contents.append(filename)
+        else:
+            print "Error Making Directory"
+
+
+=======
     def pos(self):
         if self.isdir:
             print '--[ERROR] Attempting to find position of director'
