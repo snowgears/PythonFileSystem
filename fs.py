@@ -1,8 +1,6 @@
-#!/usr/bin/env python
 import os
-
 import io
-import pickle 
+import pickle
 
 # Globals
 class glb:
@@ -28,13 +26,15 @@ def generate_filepath(filename):
         dict_filename = glb.curr_dir + '/' + filename
     return dict_filename
 
+
 def check_status():
     if glb.resume == 0:
         raise ValueError( "Process suspended cannot execute" )
 
+
 #method for saving to native file
 def dump_data():
-    dataFileName = '%s.fssave' % glb.fsname  
+    dataFileName = '%s.fssave' % glb.fsname
 
     print 'File that is saving will be named %s' % dataFileName
 
@@ -42,10 +42,9 @@ def dump_data():
     fo = io.FileIO(dataFileName, "wb")
     glb.files['glb']=glb
 
-
     pickle.dump(glb.files, fo, protocol=pickle.HIGHEST_PROTOCOL)
-  
     fo.close()
+
 
 def clear_written_data(filename):
     filename= glb.files[filename]
@@ -53,12 +52,52 @@ def clear_written_data(filename):
         glb.written_data[i] = 0
 
 
+# they said recursion wasn't that hard
+# they never had to deal with this shit
+def recursive_deldir(dirname):
+    path = generate_filepath(dirname)
 
+    if glb.files[path].is_dir() and not len(glb.files[path].contents) == 0:
+        chdir(dirname)
+        remove_lst = []
+        for f in glb.files[glb.curr_dir].contents:
+            remove_lst.append(f)
+
+        for f in remove_lst:
+            recursive_deldir(f)
+        chdir('..')
+        glb.files[glb.curr_dir].contents.remove(dirname)
+        glb.files.pop(path)
+
+
+    elif glb.files[path].is_dir() and len(glb.files[path].contents) == 0:
+        glb.files[glb.curr_dir].contents.remove(dirname)
+        glb.files.pop(path)
+    else:
+        glb.files[glb.curr_dir].contents.remove(dirname)
+        glb.files.pop(path)
 
 
 ###########################################################################
 ### fs module functions
 ###########################################################################
+def deldir(dirname):
+    try:
+        check_status()
+        path = generate_filepath(dirname)
+
+        if path in glb.files and len(glb.files[path].contents) == 0:
+            glb.files[glb.curr_dir].contents.remove(dirname)
+            glb.files.pop(path)
+        else:
+            recursive_deldir(dirname)
+
+    except ValueError:
+        print '--[ERROR] Process suspended cannot execute'
+    except:
+        print '--[ERROR] File not in directory'
+
+
 def init(fsname):
     glb.fsname = fsname
 
@@ -68,11 +107,14 @@ def init(fsname):
     # 	with open(dataFileName, 'rb') as handle:
     # 		files = pickle.load(handle)
 
-    if os.path.isfile(fsname):
+    if os.path.isfile(dataFileName):
         file1 = io.FileIO(fsname, 'w')
         file1.seek(0)
         file1.truncate()
         file1.close()
+    else:
+        os.mknod(dataFileName)
+
     # Initalize a root directory
     glb.native_size= os.path.getsize(dataFileName)
     print glb.native_size
@@ -80,16 +122,12 @@ def init(fsname):
     for i in range(glb.native_size):
         glb.written_data.append(0)
 
-    
-
-
     glb.files['/'] = pyfile('/', 0, True)
     print "--[INFO] FileSystem with name %s has been created." % fsname
 
 
 def create(filename, nbytes):
     try:
-
         check_status()
         dict_filepath = generate_filepath(filename) # Name of filepath
         glb.files[glb.curr_dir].add_file(filename)
@@ -164,7 +202,6 @@ def open(filename, mode):
         print '--[ERROR] Process suspended cannot execute'
     except:
         print '--[ERROR] File not in directory'
- 
 
 
 
@@ -310,40 +347,6 @@ def delfile(filename):
         print '--[ERROR] File not in directory'
 
 
-
-def deldir(dirname):
-    try:
-        check_status()
-        path = generate_filepath(dirname)
-        if path in glb.files:
-            # Couldn't figure out how to manually remove keys from pyfile for
-            # directories without breaking everyfuckingthing
-            if glb.files[path].is_empty():
-                glb.files.pop(path)
-                return
-
-            chdir(dirname)
-            for f in glb.files[glb.curr_dir].contents:
-                path = generate_filepath(f)
-                if glb.files[path].is_dir():
-                    # if not directory, recursion to delete every file in directory
-                    deldir(f) # Recursion into directory
-                else:
-                    # if regular file
-                    clear_written_data(path)
-                    glb.files.pop(path) # Pop regular file in directory
-            chdir('..')
-            path = generate_filepath(dirname)
-            glb.files.pop(path)
-
-    except ValueError:
-        print '--[ERROR] Process suspended cannot execute'
-    except:
-        print '--[ERROR] File not in directory'
-
-
-
-
 def isdir(filename):
     try:
         check_status()
@@ -367,21 +370,11 @@ def listdir(filename):
     try:
         check_status()
         if str(filename) == '.' or str(filename) == './':
-            for f in glb.files[glb.curr_dir].contents:
-                inner_path = generate_filepath(f)
-                # Remove files in pyfile.contents if its not in key
-                # This is a sideeffect of getting fs.deldir() working
-                if inner_path not in glb.files:
-                    glb.files[glb.curr_dir].contents.remove(f)
             print glb.files[glb.curr_dir].contents
             return
 
         path = generate_filepath(filename)
         chdir(filename)
-        for f in glb.files[path].contents:
-            inner_path = generate_filepath(f)
-            if inner_path not in glb.files:
-                glb.files[path].contents.remove(f)
         print glb.files[path].contents
         chdir('..')
     except:
@@ -492,7 +485,7 @@ class pyfile:
                     glb.written_data[j] = 1
                 print glb.written_data
                 return self.native_index
-        return -1
+        return 0
 
 
 
