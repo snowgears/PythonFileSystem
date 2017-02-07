@@ -107,13 +107,13 @@ def init(fsname):
     # 	with open(dataFileName, 'rb') as handle:
     # 		files = pickle.load(handle)
 
-    if os.path.isfile(dataFileName):
-        file1 = io.FileIO(fsname, 'w')
-        file1.seek(0)
-        file1.truncate()
-        file1.close()
-    else:
-        os.mknod(dataFileName)
+    # if os.path.isfile(dataFileName):
+    #     file1 = io.FileIO(fsname, 'w')
+    #     file1.seek(0)
+    #     file1.truncate()
+    #     file1.close()
+    # else:
+    #     os.mknod(dataFileName)
 
     # Initalize a root directory
     glb.native_size= os.path.getsize(dataFileName)
