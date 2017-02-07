@@ -485,7 +485,7 @@ class pyfile:
                     glb.written_data[j] = 1
                 print glb.written_data
                 return self.native_index
-        return 0
+        return -1
 
 
 
